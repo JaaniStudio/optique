@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 95%;      /* #f1f1f1 */
+  --foreground: 0 0% 3%;       /* #080808 */
+  --border: 0 0% 85%;
+  --input: 0 0% 85%;
+  --ring: 0 0% 3%;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background-color: #f1f1f1;
+  color: #080808;
+}
+
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
