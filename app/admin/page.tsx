@@ -13,16 +13,20 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats>({ totalOrders: 0, totalSales: 0, totalStock: 0, totalUsers: 0 });
 
   async function loadStats() {
-    const supabase = createClient();
+    try {
+      const supabase = createClient();
 
-    const { count: totalOrders } = await supabase.from("orders").select("*", { count: "exact", head: true });
-    const { data: completedOrders } = await supabase.from("orders").select("total").eq("status", "completed");
-    const totalSales = (completedOrders || []).reduce((s, o) => s + Number(o.total), 0);
-    const { data: items } = await supabase.from("items").select("stock");
-    const totalStock = (items || []).reduce((s, i) => s + Number(i.stock), 0);
-    const { count: totalUsers } = await supabase.from("profiles").select("*", { count: "exact", head: true });
+      const { count: totalOrders } = await supabase.from("orders").select("*", { count: "exact", head: true });
+      const { data: completedOrders } = await supabase.from("orders").select("total").eq("status", "completed");
+      const totalSales = (completedOrders || []).reduce((s, o) => s + Number(o.total), 0);
+      const { data: items } = await supabase.from("items").select("stock");
+      const totalStock = (items || []).reduce((s, i) => s + Number(i.stock), 0);
+      const { count: totalUsers } = await supabase.from("profiles").select("*", { count: "exact", head: true });
 
-    setStats({ totalOrders: totalOrders || 0, totalSales, totalStock, totalUsers: totalUsers || 0 });
+      setStats({ totalOrders: totalOrders || 0, totalSales, totalStock, totalUsers: totalUsers || 0 });
+    } catch (err) {
+      console.error("Failed to load stats:", err);
+    }
   }
 
   useEffect(() => {

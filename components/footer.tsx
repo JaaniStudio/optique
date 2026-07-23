@@ -32,9 +32,15 @@ export function Footer() {
         <div>
           <h4 className="font-semibold mb-3 text-sm tracking-wide">FOLLOW US</h4>
           <div className="flex gap-4">
-            <Instagram className="h-5 w-5 hover:opacity-70 cursor-pointer" />
-            <Facebook className="h-5 w-5 hover:opacity-70 cursor-pointer" />
-            <MessageCircle className="h-5 w-5 hover:opacity-70 cursor-pointer" />
+            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+              <Instagram className="h-5 w-5 hover:opacity-70" />
+            </a>
+            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+              <Facebook className="h-5 w-5 hover:opacity-70" />
+            </a>
+            <a href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "923249276352"}`} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+              <MessageCircle className="h-5 w-5 hover:opacity-70" />
+            </a>
           </div>
         </div>
       </div>

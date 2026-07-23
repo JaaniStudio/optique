@@ -16,9 +16,13 @@ export default function AdminUsersPage() {
   const [editPhone, setEditPhone] = useState("");
 
   async function load() {
-    const supabase = createClient();
-    const { data } = await supabase.from("profiles").select("*").order("created_at", { ascending: false });
-    setUsers((data as Profile[]) || []);
+    try {
+      const supabase = createClient();
+      const { data } = await supabase.from("profiles").select("*").order("created_at", { ascending: false });
+      setUsers((data as Profile[]) || []);
+    } catch (err) {
+      console.error("Failed to load users:", err);
+    }
   }
 
   useEffect(() => {

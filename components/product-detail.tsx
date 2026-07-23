@@ -1,30 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Heart, ShoppingCart, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatPKR } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { useUIStore } from "@/lib/store";
 import type { Item } from "@/types";
 
 export function ProductDetail({ item }: { item: Item }) {
-  const images = item.images?.length ? item.images : [{ url: "/placeholder-glasses.png", path: "" }];
+  const images = item.images?.length ? item.images : [{ url: "/placeholder-glasses.svg", path: "" }];
   const [activeImg, setActiveImg] = useState(item.thumbnail_url || images[0].url);
   const [qty, setQty] = useState(1);
   const [isFav, setIsFav] = useState(false);
   const [adding, setAdding] = useState(false);
+  const router = useRouter();
+  const setCartCount = useUIStore((s) => s.setCartCount);
 
   const price = item.on_sale && item.sale_price ? item.sale_price : item.price;
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      supabase.from("favorites").select("id").eq("user_id", user.id).eq("item_id", item.id).maybeSingle().then(({ data }) => {
+        if (data) setIsFav(true);
+      });
+    });
+  }, [item.id]);
 
   async function addToCart() {
     setAdding(true);
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      window.location.href = "/login";
+      router.push("/login");
+      setAdding(false);
       return;
     }
     const { data: existing } = await supabase
@@ -36,14 +51,16 @@ export function ProductDetail({ item }: { item: Item }) {
       await supabase.from("cart_items").insert({ user_id: user.id, item_id: item.id, quantity: qty });
     }
     setAdding(false);
-    window.location.href = "/cart";
+    const { count } = await supabase.from("cart_items").select("id", { count: "exact", head: true }).eq("user_id", user.id);
+    if (count !== null) setCartCount(count);
+    router.push("/cart");
   }
 
   async function toggleFavorite() {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      window.location.href = "/login";
+      router.push("/login");
       return;
     }
     if (isFav) {

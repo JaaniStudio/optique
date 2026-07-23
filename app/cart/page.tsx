@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ export default function CartPage() {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [placing, setPlacing] = useState(false);
+  const router = useRouter();
   const setCartCount = useUIStore((s) => s.setCartCount);
 
   async function load() {
@@ -66,7 +68,7 @@ export default function CartPage() {
     setPlacing(true);
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { window.location.href = "/login"; return; }
+    if (!user) { router.push("/login"); return; }
 
     const { data: order, error } = await supabase
       .from("orders")
@@ -117,7 +119,7 @@ export default function CartPage() {
           return (
             <div key={r.id} className="flex items-center gap-4 border border-ink/10 rounded-lg p-4 bg-white">
               <div className="relative h-20 w-20 rounded-md overflow-hidden shrink-0 bg-cream">
-                <Image src={r.item.thumbnail_url || r.item.images?.[0]?.url || "/placeholder-glasses.png"} alt={r.item.name} fill className="object-cover" />
+                <Image src={r.item.thumbnail_url || r.item.images?.[0]?.url || "/placeholder-glasses.svg"} alt={r.item.name} fill className="object-cover" />
               </div>
               <div className="flex-1">
                 <p className="font-medium">{r.item.name}</p>

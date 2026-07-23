@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatPKR } from "@/lib/utils";
@@ -12,6 +13,7 @@ export default function AccountPage() {
   const [user, setUser] = useState<any>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     (async () => {
@@ -33,7 +35,8 @@ export default function AccountPage() {
   async function logout() {
     const supabase = createClient();
     await supabase.auth.signOut();
-    window.location.href = "/";
+    router.push("/");
+    router.refresh();
   }
 
   if (loading) return <div className="max-w-4xl mx-auto px-4 py-20 text-center">Loading...</div>;

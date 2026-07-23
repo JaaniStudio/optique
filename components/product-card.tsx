@@ -7,18 +7,30 @@ import { Heart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatPKR } from "@/lib/utils";
 import type { Item } from "@/types";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
 
 export function ProductCard({ item }: { item: Item }) {
   const [isFav, setIsFav] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      supabase.from("favorites").select("id").eq("user_id", user.id).eq("item_id", item.id).maybeSingle().then(({ data }) => {
+        if (data) setIsFav(true);
+      });
+    });
+  }, [item.id]);
 
   async function toggleFavorite(e: React.MouseEvent) {
     e.preventDefault();
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      window.location.href = "/login";
+      router.push("/login");
       return;
     }
     if (isFav) {
@@ -40,7 +52,7 @@ export function ProductCard({ item }: { item: Item }) {
       >
         <div className="relative aspect-square bg-cream overflow-hidden">
           <Image
-            src={item.thumbnail_url || item.images?.[0]?.url || "/placeholder-glasses.png"}
+            src={item.thumbnail_url || item.images?.[0]?.url || "/placeholder-glasses.svg"}
             alt={item.name}
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-105"

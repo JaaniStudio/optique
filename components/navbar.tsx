@@ -22,6 +22,16 @@ export function Navbar() {
     supabase.from("categories").select("*").order("name").then(({ data }) => {
       if (data) setCategories(data as Category[]);
     });
+
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      supabase.from("cart_items").select("id", { count: "exact", head: true }).eq("user_id", user.id).then(({ count }) => {
+        if (count !== null) useUIStore.getState().setCartCount(count);
+      });
+      supabase.from("favorites").select("id", { count: "exact", head: true }).eq("user_id", user.id).then(({ count }) => {
+        if (count !== null) useUIStore.getState().setFavoritesCount(count);
+      });
+    });
   }, []);
 
   const navLinkClass =

@@ -23,13 +23,17 @@ export default function AdminItemsPage() {
   const [editingItem, setEditingItem] = useState<Item | null>(null);
 
   async function load() {
-    const supabase = createClient();
-    const { data: cats } = await supabase.from("categories").select("*").order("name");
-    setCategories((cats as Category[]) || []);
+    try {
+      const supabase = createClient();
+      const { data: cats } = await supabase.from("categories").select("*").order("name");
+      setCategories((cats as Category[]) || []);
 
-    let query = supabase.from("items").select("*, category:categories(*)").order("created_at", { ascending: false });
-    const { data: itemsData } = await query;
-    setItems((itemsData as Item[]) || []);
+      let query = supabase.from("items").select("*, category:categories(*)").order("created_at", { ascending: false });
+      const { data: itemsData } = await query;
+      setItems((itemsData as Item[]) || []);
+    } catch (err) {
+      console.error("Failed to load items:", err);
+    }
   }
 
   useEffect(() => {
@@ -49,8 +53,10 @@ export default function AdminItemsPage() {
   }
 
   async function toggleStock(item: Item, delta: number) {
+    const newStock = Math.max(0, item.stock + delta);
+    setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, stock: newStock } : i));
     const supabase = createClient();
-    await supabase.from("items").update({ stock: Math.max(0, item.stock + delta) }).eq("id", item.id);
+    await supabase.from("items").update({ stock: newStock }).eq("id", item.id);
   }
 
   const filtered = items.filter((i) => {

@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 export function createClient() {
   const cookieStore = cookies();
@@ -12,14 +13,13 @@ export function createClient() {
         get(name: string) {
           return cookieStore.get(name)?.value;
         },
-        set(name: string, value: string, options) {
+        set(name: string, value: string, options: { domain?: string; path?: string; maxAge?: number; httpOnly?: boolean; secure?: boolean; sameSite?: "lax" | "strict" | "none" }) {
           try {
             cookieStore.set({ name, value, ...options });
           } catch {
-            // called from a Server Component, ignore if middleware refreshes sessions
           }
         },
-        remove(name: string, options) {
+        remove(name: string, options: { domain?: string; path?: string; maxAge?: number; httpOnly?: boolean; secure?: boolean; sameSite?: "lax" | "strict" | "none" }) {
           try {
             cookieStore.set({ name, value: "", ...options });
           } catch {}
@@ -28,9 +28,6 @@ export function createClient() {
     }
   );
 }
-
-// Admin client with service role — SERVER ONLY, never import in client components
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 export function createAdminClient() {
   return createSupabaseClient(

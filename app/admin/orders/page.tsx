@@ -18,11 +18,15 @@ export default function AdminOrdersPage() {
   const [statusFilter, setStatusFilter] = useState<"pending" | "completed" | "all">("pending");
 
   async function load() {
-    const supabase = createClient();
-    let query = supabase.from("orders").select("*, order_items(*)").order("created_at", { ascending: false });
-    if (statusFilter !== "all") query = query.eq("status", statusFilter);
-    const { data } = await query;
-    setOrders((data as Order[]) || []);
+    try {
+      const supabase = createClient();
+      let query = supabase.from("orders").select("*, order_items(*)").order("created_at", { ascending: false });
+      if (statusFilter !== "all") query = query.eq("status", statusFilter);
+      const { data } = await query;
+      setOrders((data as Order[]) || []);
+    } catch (err) {
+      console.error("Failed to load orders:", err);
+    }
   }
 
   useEffect(() => {

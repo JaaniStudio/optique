@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, ShoppingBag, Package, Users, LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -15,11 +15,13 @@ const links = [
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
 
   async function logout() {
     const supabase = createClient();
     await supabase.auth.signOut();
-    window.location.href = "/";
+    router.push("/");
+    router.refresh();
   }
 
   return (
