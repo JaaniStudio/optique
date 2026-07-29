@@ -1,7 +1,13 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Instagram, Facebook, MessageCircle } from "lucide-react";
 
 export function Footer() {
+  const pathname = usePathname();
+  if (pathname.startsWith("/admin")) return null;
+
   return (
     <footer className="bg-ink text-cream mt-24">
       <div className="mx-auto max-w-7xl px-4 md:px-8 py-14 grid grid-cols-1 md:grid-cols-4 gap-10">
@@ -45,7 +51,7 @@ export function Footer() {
         </div>
       </div>
       <div className="border-t border-cream/10 py-4 text-center text-xs text-cream/40">
-        © {new Date().getFullYear()} Optique. All rights reserved.
+        &copy; {new Date().getFullYear()} Optique. All rights reserved.
       </div>
     </footer>
   );
