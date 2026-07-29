@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, ShoppingBag, Package, Users, LogOut } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Package, Users, LogOut, Tags } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +10,7 @@ const links = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/orders", label: "Manage Orders", icon: ShoppingBag },
   { href: "/admin/items", label: "Add / Manage Items", icon: Package },
+  { href: "/admin/categories", label: "Manage Categories", icon: Tags },
   { href: "/admin/users", label: "Manage Users", icon: Users },
 ];
 
