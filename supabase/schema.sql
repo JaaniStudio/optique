@@ -94,7 +94,7 @@ create table favorites (
 create table orders (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid references auth.users(id) on delete set null,
-  status text not null default 'pending' check (status in ('pending','completed','cancelled')),
+  status text not null default 'pending' check (status in ('pending','in_transit','completed','cancelled')),
   total numeric(10,2) not null,
   customer_name text,
   customer_phone text,
