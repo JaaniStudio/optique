@@ -1,5 +1,6 @@
 import { HeroSlider } from "@/components/hero-slider";
 import { ProductCard } from "@/components/product-card";
+import { Testimonials } from "@/components/testimonials";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import type { Category, Item } from "@/types";
@@ -51,6 +52,9 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+
+      {/* Testimonials */}
+      <Testimonials />
     </div>
   );
 }
