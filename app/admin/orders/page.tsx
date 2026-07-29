@@ -10,18 +10,19 @@ import {
 import { formatPKR } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import type { Order } from "@/types";
-import { Trash2, Check, Search, PackageOpen } from "lucide-react";
+import { Trash2, Check, Search, PackageOpen, Truck } from "lucide-react";
 
 const statusStyles: Record<string, "success" | "warning" | "default"> = {
   completed: "success",
-  pending: "warning",
+  in_transit: "warning",
+  pending: "default",
   cancelled: "default",
 };
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"pending" | "completed" | "all">("pending");
+  const [statusFilter, setStatusFilter] = useState<"pending" | "in_transit" | "completed" | "all">("pending");
   const [loading, setLoading] = useState(true);
 
   async function load() {
@@ -47,6 +48,11 @@ export default function AdminOrdersPage() {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [statusFilter]);
+
+  async function markInTransit(id: string) {
+    const supabase = createClient();
+    await supabase.from("orders").update({ status: "in_transit" }).eq("id", id);
+  }
 
   async function completeOrder(id: string) {
     const supabase = createClient();
@@ -89,6 +95,7 @@ export default function AdminOrdersPage() {
           <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="in_transit">In Transit</SelectItem>
             <SelectItem value="completed">Completed</SelectItem>
             <SelectItem value="all">All Orders</SelectItem>
           </SelectContent>
@@ -117,7 +124,7 @@ export default function AdminOrdersPage() {
                 )}
               </div>
               <div className="text-right shrink-0">
-                <Badge variant={statusStyles[o.status] || "default"}>{o.status}</Badge>
+                <Badge variant={statusStyles[o.status] || "default"}>{o.status.replace("_", " ")}</Badge>
                 <p className="font-bold mt-2">{formatPKR(o.total)}</p>
               </div>
             </div>
@@ -132,7 +139,12 @@ export default function AdminOrdersPage() {
               </div>
             )}
             <div className="flex gap-2 mt-4 pt-3 border-t border-ink/5">
-              {o.status !== "completed" && (
+              {o.status === "pending" && (
+                <Button size="sm" onClick={() => markInTransit(o.id)}>
+                  <Truck className="h-3.5 w-3.5 mr-1" /> Mark In Transit
+                </Button>
+              )}
+              {o.status === "in_transit" && (
                 <Button size="sm" onClick={() => completeOrder(o.id)}>
                   <Check className="h-3.5 w-3.5 mr-1" /> Mark Completed
                 </Button>

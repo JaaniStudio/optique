@@ -24,6 +24,8 @@ type Props = {
   onSaved: () => void;
 };
 
+type PickedFile = { file: File; blobUrl: string };
+
 export function ItemFormDialog({ open, onOpenChange, categories, editingItem, onSaved }: Props) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -32,9 +34,9 @@ export function ItemFormDialog({ open, onOpenChange, categories, editingItem, on
   const [stock, setStock] = useState("");
   const [onSale, setOnSale] = useState(false);
   const [salePrice, setSalePrice] = useState("");
-  const [images, setImages] = useState<ItemImage[]>([]);
-  const [thumbnail, setThumbnail] = useState("");
-  const [uploading, setUploading] = useState(false);
+  const [existingImages, setExistingImages] = useState<ItemImage[]>([]);
+  const [pickedFiles, setPickedFiles] = useState<PickedFile[]>([]);
+  const [thumbnailIndex, setThumbnailIndex] = useState(-1);
   const [saving, setSaving] = useState(false);
   const [uploadError, setUploadError] = useState("");
 
@@ -48,13 +50,21 @@ export function ItemFormDialog({ open, onOpenChange, categories, editingItem, on
       setStock(String(editingItem.stock));
       setOnSale(editingItem.on_sale);
       setSalePrice(editingItem.sale_price ? String(editingItem.sale_price) : "");
-      setImages(editingItem.images || []);
-      setThumbnail(editingItem.thumbnail_url || editingItem.images?.[0]?.url || "");
+      setExistingImages(editingItem.images || []);
+      setPickedFiles([]);
+      const existingIdx = editingItem.images?.findIndex((i) => i.url === editingItem.thumbnail_url) ?? -1;
+      setThumbnailIndex(existingIdx >= 0 ? existingIdx : 0);
     } else {
       setName(""); setDescription(""); setPrice(""); setCategoryId(categories[0]?.id || "");
-      setStock(""); setOnSale(false); setSalePrice(""); setImages([]); setThumbnail(""); setUploadError("");
+      setStock(""); setOnSale(false); setSalePrice(""); setExistingImages([]); setPickedFiles([]); setThumbnailIndex(-1); setUploadError("");
     }
   }, [editingItem, open, categories]);
+
+  useEffect(() => {
+    return () => { pickedFiles.forEach((pf) => URL.revokeObjectURL(pf.blobUrl)); };
+  }, [pickedFiles]);
+
+  const allImages = [...existingImages, ...pickedFiles] as (ItemImage | PickedFile)[];
 
   function getBucketForCurrentCategory(): string | null {
     return categories.find((c) => c.id === categoryId)?.bucket_name ?? null;
@@ -71,49 +81,77 @@ export function ItemFormDialog({ open, onOpenChange, categories, editingItem, on
     return true;
   }
 
-  async function handleUpload(files: FileList | null) {
-    if (!files || !categoryId) return;
-    const bucketName = getBucketForCurrentCategory();
-    if (!bucketName) { setUploadError("Select a category first."); return; }
-    if (images.length + files.length > 5) { alert("Max 5 images per item."); return; }
-
+  function handlePickFiles(files: FileList | null) {
+    if (!files) return;
+    const total = existingImages.length + pickedFiles.length + files.length;
+    if (total > 5) { alert("Max 5 images per item."); return; }
     setUploadError("");
-    setUploading(true);
-    const supabase = createClient();
-    const newImages: ItemImage[] = [];
-
-    const bucketReady = await ensureBucket(bucketName);
-    if (!bucketReady) { setUploading(false); return; }
-
+    const newPicks: PickedFile[] = [];
     for (const file of Array.from(files)) {
       if (file.size > 5 * 1024 * 1024) { setUploadError(`"${file.name}" exceeds 5MB limit.`); continue; }
-      const ext = file.name.split(".").pop();
-      const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const { error } = await supabase.storage.from(bucketName).upload(path, file, {
-        cacheControl: "3600", upsert: false,
-      });
-      if (error) { setUploadError(`Upload failed: ${error.message}`); continue; }
-      const { data: pub } = supabase.storage.from(bucketName).getPublicUrl(path);
-      newImages.push({ url: pub.publicUrl, path });
+      newPicks.push({ file, blobUrl: URL.createObjectURL(file) });
     }
-
-    const updated = [...images, ...newImages];
-    setImages(updated);
-    if (!thumbnail && updated[0]) setThumbnail(updated[0].url);
-    setUploading(false);
+    const updated = [...pickedFiles, ...newPicks];
+    setPickedFiles(updated);
+    if (thumbnailIndex < 0 && allImages.length === 0) setThumbnailIndex(0);
   }
 
-  function removeImage(img: ItemImage) {
-    const updated = images.filter((i) => i.url !== img.url);
-    setImages(updated);
-    if (thumbnail === img.url) setThumbnail(updated[0]?.url || "");
+  function removeImage(index: number) {
+    const img = allImages[index];
+    if (!img) return;
+    const isExisting = "url" in img && !("file" in img);
+    if (isExisting) {
+      const newExisting = existingImages.filter((_, i) => i !== index);
+      setExistingImages(newExisting);
+    } else {
+      URL.revokeObjectURL((img as PickedFile).blobUrl);
+      const pickStart = existingImages.length;
+      const pickIdx = index - pickStart;
+      setPickedFiles((prev) => prev.filter((_, i) => i !== pickIdx));
+    }
+    if (thumbnailIndex === index) {
+      const remaining = allImages.length - 1;
+      setThumbnailIndex(remaining > 0 ? Math.min(thumbnailIndex, remaining - 1) : -1);
+    } else if (thumbnailIndex > index) {
+      setThumbnailIndex(thumbnailIndex - 1);
+    }
+  }
+
+  function getImageUrl(img: ItemImage | PickedFile): string {
+    return "blobUrl" in img ? img.blobUrl : img.url;
   }
 
   async function handleSave() {
     if (!name || !price || !categoryId) { alert("Name, price, and category are required."); return; }
-    if (images.length === 0) { alert("At least one image is required."); return; }
+    if (allImages.length === 0) { alert("At least one image is required."); return; }
     setSaving(true);
+    setUploadError("");
     const supabase = createClient();
+    const bucketName = getBucketForCurrentCategory();
+
+    if (!bucketName) { alert("No bucket for selected category."); setSaving(false); return; }
+
+    const bucketReady = await ensureBucket(bucketName);
+    if (!bucketReady) { setSaving(false); return; }
+
+    const uploadedImages: ItemImage[] = [...existingImages];
+
+    for (const pf of pickedFiles) {
+      const ext = pf.file.name.split(".").pop();
+      const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error } = await supabase.storage.from(bucketName).upload(path, pf.file, {
+        cacheControl: "3600", upsert: false,
+      });
+      if (error) { setUploadError(`Upload failed for ${pf.file.name}: ${error.message}`); continue; }
+      const { data: pub } = supabase.storage.from(bucketName).getPublicUrl(path);
+      uploadedImages.push({ url: pub.publicUrl, path });
+    }
+
+    if (uploadedImages.length === 0) { alert("No images were uploaded successfully."); setSaving(false); return; }
+
+    const thumbUrl = thumbnailIndex >= 0 && thumbnailIndex < uploadedImages.length
+      ? uploadedImages[thumbnailIndex].url
+      : uploadedImages[0].url;
 
     const payload = {
       name,
@@ -123,8 +161,8 @@ export function ItemFormDialog({ open, onOpenChange, categories, editingItem, on
       stock: Number(stock) || 0,
       on_sale: onSale,
       sale_price: onSale && salePrice ? Number(salePrice) : null,
-      images,
-      thumbnail_url: thumbnail || images[0]?.url || null,
+      images: uploadedImages,
+      thumbnail_url: thumbUrl,
       updated_at: new Date().toISOString(),
     };
 
@@ -134,6 +172,7 @@ export function ItemFormDialog({ open, onOpenChange, categories, editingItem, on
       await supabase.from("items").insert(payload);
     }
 
+    pickedFiles.forEach((pf) => URL.revokeObjectURL(pf.blobUrl));
     setSaving(false);
     onOpenChange(false);
     onSaved();
@@ -196,47 +235,45 @@ export function ItemFormDialog({ open, onOpenChange, categories, editingItem, on
             <Label>Images (max 5) &mdash; click a photo to set it as thumbnail</Label>
             {uploadError && <p className="text-sm text-red-600 mt-1">{uploadError}</p>}
             <div className="flex flex-wrap gap-3 mt-2">
-              {images.map((img) => (
+              {allImages.map((img, idx) => (
                 <div
-                  key={img.url}
-                  onClick={() => setThumbnail(img.url)}
+                  key={getImageUrl(img)}
+                  onClick={() => setThumbnailIndex(idx)}
                   className={`relative h-20 w-20 rounded-md overflow-hidden border-2 cursor-pointer transition-all hover:opacity-90 ${
-                    thumbnail === img.url ? "border-ink ring-1 ring-ink" : "border-border"
+                    thumbnailIndex === idx ? "border-ink ring-1 ring-ink" : "border-border"
                   }`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={img.url} alt="" className="h-full w-full object-cover" />
-                  {thumbnail === img.url && (
+                  <img src={getImageUrl(img)} alt="" className="h-full w-full object-cover" />
+                  {thumbnailIndex === idx && (
                     <span className="absolute top-1 left-1 bg-ink rounded-full p-0.5">
                       <Star className="h-3 w-3 text-cream fill-cream" />
                     </span>
                   )}
                   <button
-                    onClick={(e) => { e.stopPropagation(); removeImage(img); }}
+                    onClick={(e) => { e.stopPropagation(); removeImage(idx); }}
                     className="absolute top-1 right-1 bg-white/90 rounded-full p-0.5 hover:bg-white"
                   >
                     <X className="h-3 w-3" />
                   </button>
                 </div>
               ))}
-              {images.length < 5 && (
+              {allImages.length < 5 && (
                 <label className="h-20 w-20 rounded-md border-2 border-dashed border-border flex items-center justify-center cursor-pointer text-ink/40 hover:text-ink/60 hover:border-ink/40 transition-colors">
-                  {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <UploadCloud className="h-5 w-5" />}
+                  <UploadCloud className="h-5 w-5" />
                   <input
                     type="file"
                     accept="image/*"
                     multiple
                     className="hidden"
-                    disabled={uploading}
-                    onChange={(e) => handleUpload(e.target.files)}
+                    onChange={(e) => handlePickFiles(e.target.files)}
                   />
                 </label>
               )}
             </div>
-            {uploading && <p className="text-xs text-ink/50 mt-1">Uploading images...</p>}
           </div>
 
-          <Button className="w-full" size="lg" onClick={handleSave} disabled={saving || uploading}>
+          <Button className="w-full" size="lg" onClick={handleSave} disabled={saving}>
             {saving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin inline" /> Saving...</> : editingItem ? "Save Changes" : "Add Item"}
           </Button>
         </div>

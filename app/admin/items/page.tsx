@@ -50,6 +50,15 @@ export default function AdminItemsPage() {
   async function deleteItem(id: string) {
     if (!confirm("Delete this item permanently?")) return;
     const supabase = createClient();
+    const item = items.find((i) => i.id === id);
+    if (item?.images?.length) {
+      const bucketName = item.category?.bucket_name;
+      if (bucketName) {
+        for (const img of item.images) {
+          if (img.path) { await supabase.storage.from(bucketName).remove([img.path]).catch(() => {}); }
+        }
+      }
+    }
     await supabase.from("items").delete().eq("id", id);
   }
 

@@ -88,7 +88,7 @@ export default function AccountPage() {
                 <p className="font-medium">Order #{o.id.slice(0, 8)}</p>
                 <p className="text-sm text-ink/50">{new Date(o.created_at).toLocaleDateString()}</p>
               </div>
-              <Badge variant={o.status === "completed" ? "success" : "warning"}>{o.status}</Badge>
+              <Badge variant={o.status === "completed" ? "success" : o.status === "in_transit" ? "warning" : "default"}>{o.status.replace("_", " ")}</Badge>
             </div>
             <ul className="mt-3 text-sm text-ink/70 space-y-1">
               {o.order_items?.map((oi) => (
