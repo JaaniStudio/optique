@@ -11,7 +11,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import type { Category, Item } from "@/types";
 import { formatPKR } from "@/lib/utils";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, PackageOpen } from "lucide-react";
 import { ItemFormDialog } from "@/components/admin/item-form-dialog";
 
 export default function AdminItemsPage() {
@@ -21,18 +21,19 @@ export default function AdminItemsPage() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
+  const [loading, setLoading] = useState(true);
 
   async function load() {
     try {
       const supabase = createClient();
       const { data: cats } = await supabase.from("categories").select("*").order("name");
       setCategories((cats as Category[]) || []);
-
-      let query = supabase.from("items").select("*, category:categories(*)").order("created_at", { ascending: false });
-      const { data: itemsData } = await query;
+      const { data: itemsData } = await supabase.from("items").select("*, category:categories(*)").order("created_at", { ascending: false });
       setItems((itemsData as Item[]) || []);
+      setLoading(false);
     } catch (err) {
       console.error("Failed to load items:", err);
+      setLoading(false);
     }
   }
 
@@ -65,17 +66,25 @@ export default function AdminItemsPage() {
     return matchesSearch && matchesCategory;
   });
 
+  if (loading) return <div className="text-center py-20 text-ink/50">Loading...</div>;
+
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-display font-bold">Manage Items</h1>
+        <div>
+          <h1 className="text-2xl font-display font-bold">Manage Items</h1>
+          <p className="text-sm text-ink/50 mt-1">Add, edit, and manage your products</p>
+        </div>
         <Button onClick={() => { setEditingItem(null); setDialogOpen(true); }}>
           <Plus className="h-4 w-4 mr-1" /> Add Item
         </Button>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <Input placeholder="Search items..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-sm" />
+        <div className="relative max-w-sm flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ink/30" />
+          <Input placeholder="Search items..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+        </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
           <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -87,22 +96,22 @@ export default function AdminItemsPage() {
 
       <div className="space-y-3">
         {filtered.map((item) => (
-          <div key={item.id} className="flex items-center gap-4 border border-ink/10 rounded-lg p-3 bg-white">
-            <div className="relative h-16 w-16 rounded-md overflow-hidden shrink-0 bg-cream">
+          <div key={item.id} className="flex items-center gap-4 border border-ink/10 rounded-xl p-4 bg-white transition-all hover:shadow-sm">
+            <div className="relative h-16 w-16 rounded-lg overflow-hidden shrink-0 bg-cream">
               {item.thumbnail_url && <Image src={item.thumbnail_url} alt={item.name} fill className="object-cover" />}
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-medium truncate">{item.name}</p>
-              <p className="text-sm text-ink/50">{item.category?.name}</p>
+              <p className="text-sm text-ink/50">{item.category?.name || "No category"}</p>
             </div>
-            <div className="text-sm">
+            <div className="text-right shrink-0">
               <p className="font-semibold">{formatPKR(item.on_sale && item.sale_price ? item.sale_price : item.price)}</p>
               {item.on_sale && <Badge variant="sale" className="mt-1">SALE</Badge>}
             </div>
-            <div className="flex items-center gap-1 text-sm">
-              <button onClick={() => toggleStock(item, -1)} className="px-2 border border-ink/15 rounded">-</button>
-              <span className="w-8 text-center">{item.stock}</span>
-              <button onClick={() => toggleStock(item, 1)} className="px-2 border border-ink/15 rounded">+</button>
+            <div className="flex items-center gap-1 text-sm shrink-0">
+              <button onClick={() => toggleStock(item, -1)} className="h-8 w-8 border border-ink/15 rounded-md hover:bg-cream transition-colors">-</button>
+              <span className="w-10 text-center font-medium">{item.stock}</span>
+              <button onClick={() => toggleStock(item, 1)} className="h-8 w-8 border border-ink/15 rounded-md hover:bg-cream transition-colors">+</button>
             </div>
             <Button size="sm" variant="outline" onClick={() => { setEditingItem(item); setDialogOpen(true); }}>
               <Pencil className="h-3.5 w-3.5" />
@@ -112,7 +121,12 @@ export default function AdminItemsPage() {
             </Button>
           </div>
         ))}
-        {filtered.length === 0 && <p className="text-ink/50 text-center py-16">No items found.</p>}
+        {filtered.length === 0 && (
+          <div className="text-center py-20">
+            <PackageOpen className="h-10 w-10 mx-auto text-ink/20 mb-3" />
+            <p className="text-ink/50">No items found.</p>
+          </div>
+        )}
       </div>
 
       <ItemFormDialog
