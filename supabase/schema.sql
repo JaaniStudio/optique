@@ -148,9 +148,21 @@ create policy "categories are public" on categories for select using (true);
 create policy "active items are public" on items for select using (is_active = true);
 create policy "site settings are public" on site_settings for select using (true);
 
--- Profiles: user can read/update own row
+-- Profiles: user can read/update/insert own row
 create policy "user reads own profile" on profiles for select using (auth.uid() = id);
 create policy "user updates own profile" on profiles for update using (auth.uid() = id);
+create policy "user inserts own profile" on profiles for insert with check (auth.uid() = id);
+
+-- Service role needs table-level access for admin client
+grant usage on schema public to service_role;
+grant all on public.profiles to service_role;
+grant all on public.categories to service_role;
+grant all on public.items to service_role;
+grant all on public.cart_items to service_role;
+grant all on public.favorites to service_role;
+grant all on public.orders to service_role;
+grant all on public.order_items to service_role;
+grant all on public.site_settings to service_role;
 
 -- Cart: user manages own cart
 create policy "user manages own cart" on cart_items for all using (auth.uid() = user_id);
