@@ -2,7 +2,6 @@ import { HeroSlider } from "@/components/hero-slider";
 import { ProductCard } from "@/components/product-card";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import Image from "next/image";
 import type { Category, Item } from "@/types";
 
 export const revalidate = 60;
