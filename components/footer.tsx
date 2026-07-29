@@ -9,7 +9,7 @@ export function Footer() {
   if (pathname.startsWith("/admin")) return null;
 
   return (
-    <footer className="bg-ink text-cream mt-24">
+    <footer className="bg-ink text-cream">
       <div className="mx-auto max-w-7xl px-4 md:px-8 py-14 grid grid-cols-1 md:grid-cols-4 gap-10">
         <div>
           <h3 className="text-xl font-display font-bold mb-3">OPTIQUE</h3>
