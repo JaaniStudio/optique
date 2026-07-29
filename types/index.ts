@@ -26,7 +26,7 @@ export type Item = {
 export type Order = {
   id: string;
   user_id: string | null;
-  status: "pending" | "completed" | "cancelled";
+  status: "pending" | "in_transit" | "completed" | "cancelled";
   total: number;
   customer_name: string | null;
   customer_phone: string | null;
