@@ -30,21 +30,19 @@ export function ProductFilters({
   const [priceError, setPriceError] = useState("");
 
   function handleMinChange(value: string) {
+    onMinPriceChange(value);
     setPriceError("");
     if (maxPrice && value && Number(value) > Number(maxPrice)) {
       setPriceError("Min cannot exceed max");
-      return;
     }
-    onMinPriceChange(value);
   }
 
   function handleMaxChange(value: string) {
+    onMaxPriceChange(value);
     setPriceError("");
     if (minPrice && value && Number(value) < Number(minPrice)) {
       setPriceError("Max cannot be less than min");
-      return;
     }
-    onMaxPriceChange(value);
   }
 
   function clearFilters() {
