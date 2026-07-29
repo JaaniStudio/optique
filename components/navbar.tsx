@@ -2,21 +2,25 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Search, ShoppingCart, Heart, User, Menu, X, LayoutDashboard } from "lucide-react";
+import { Search, ShoppingCart, Heart, User, Menu, X, LayoutDashboard, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { createClient } from "@/lib/supabase/client";
 import type { Category } from "@/types";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { useUIStore } from "@/lib/store";
+import { useRouter } from "next/navigation";
 
 export function Navbar() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
+
   const [isAdmin, setIsAdmin] = useState(false);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const { cartCount, favoritesCount } = useUIStore();
+  const router = useRouter();
 
   useEffect(() => {
     const supabase = createClient();
@@ -24,20 +28,30 @@ export function Navbar() {
       if (data) setCategories(data as Category[]);
     });
 
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) return;
-      const isAdminFromAuth = (user?.app_metadata as Record<string, unknown>)?.is_admin === true;
-      supabase.from("profiles").select("is_admin").eq("id", user.id).single().then(({ data: profile }) => {
+    supabase.auth.getUser().then(({ data: { user: u } }) => {
+      if (!u) return;
+      setUser(u);
+      const isAdminFromAuth = (u?.app_metadata as Record<string, unknown>)?.is_admin === true;
+      supabase.from("profiles").select("is_admin").eq("id", u.id).single().then(({ data: profile }) => {
         setIsAdmin(profile?.is_admin === true || isAdminFromAuth);
       });
-      supabase.from("cart_items").select("id", { count: "exact", head: true }).eq("user_id", user.id).then(({ count }) => {
+      supabase.from("cart_items").select("id", { count: "exact", head: true }).eq("user_id", u.id).then(({ count }) => {
         if (count !== null) useUIStore.getState().setCartCount(count);
       });
-      supabase.from("favorites").select("id", { count: "exact", head: true }).eq("user_id", user.id).then(({ count }) => {
+      supabase.from("favorites").select("id", { count: "exact", head: true }).eq("user_id", u.id).then(({ count }) => {
         if (count !== null) useUIStore.getState().setFavoritesCount(count);
       });
     });
   }, []);
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    useUIStore.getState().setCartCount(0);
+    useUIStore.getState().setFavoritesCount(0);
+    setUser(null);
+    await supabase.auth.signOut();
+    router.push("/");
+  }
 
   const navLinkClass =
     "text-sm font-medium tracking-wide hover:opacity-60 transition-opacity";
@@ -46,40 +60,47 @@ export function Navbar() {
     <header className="sticky top-0 z-40 w-full border-b border-ink/10 bg-cream/95 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-8">
         {/* Logo */}
-        <Link href="/" className="text-xl font-display font-bold tracking-tight text-ink">
+        <Link href="/" className="text-xl font-display font-bold tracking-tight text-ink shrink-0">
           OPTIQUE
         </Link>
 
-        {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-8">
-          <Link href="/" className={navLinkClass}>Home</Link>
+        {/* Desktop nav + search */}
+        <div className="hidden md:flex items-center gap-6 flex-1 justify-center px-6">
+          <nav className="flex items-center gap-6">
+            <Link href="/" className={navLinkClass}>Home</Link>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger className={navLinkClass + " outline-none"}>
-              Products
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem asChild>
-                <Link href="/products">All Products</Link>
-              </DropdownMenuItem>
-              {categories.map((c) => (
-                <DropdownMenuItem key={c.id} asChild>
-                  <Link href={`/products/${c.slug}`}>{c.name}</Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger className={navLinkClass + " outline-none"}>
+                Products
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem asChild>
+                  <Link href="/products">All Products</Link>
                 </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                {categories.map((c) => (
+                  <DropdownMenuItem key={c.id} asChild>
+                    <Link href={`/products/${c.slug}`}>{c.name}</Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-          <Link href="/about" className={navLinkClass}>About</Link>
-          <Link href="/contact" className={navLinkClass}>Contact</Link>
-        </nav>
+            <Link href="/about" className={navLinkClass}>About</Link>
+            <Link href="/contact" className={navLinkClass}>Contact</Link>
+          </nav>
+
+          <form action="/products" className="relative max-w-xs w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ink/40" />
+            <input
+              name="q"
+              placeholder="Search in products..."
+              className="w-full bg-ink/5 rounded-md py-1.5 pl-9 pr-3 text-sm outline-none placeholder:text-ink/40 focus:ring-1 focus:ring-ink/20 transition-all"
+            />
+          </form>
+        </div>
 
         {/* Right icons */}
         <div className="flex items-center gap-4">
-          <motion.button whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }} onClick={() => setSearchOpen((s) => !s)}>
-            <Search className="h-5 w-5" />
-          </motion.button>
-
           <Link href="/favorites" className="relative">
             <motion.div whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}>
               <Heart className="h-5 w-5" />
@@ -120,6 +141,14 @@ export function Navbar() {
                   </Link>
                 </DropdownMenuItem>
               )}
+              {user && (
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <span className="flex items-center gap-2 text-red-600">
+                    <LogOut className="h-4 w-4" />
+                    Sign Out
+                  </span>
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -129,26 +158,19 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Search bar */}
-      <AnimatePresence>
-        {searchOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden border-t border-ink/10 px-4 md:px-8"
-          >
-            <form action="/products" className="mx-auto max-w-7xl py-3">
-              <input
-                name="q"
-                autoFocus
-                placeholder="Search glasses..."
-                className="w-full bg-transparent text-lg outline-none placeholder:text-ink/40"
-              />
-            </form>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Mobile search bar */}
+      <div className="md:hidden border-t border-ink/10 px-4 pb-3 pt-2">
+        <form action="/products">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ink/40" />
+            <input
+              name="q"
+              placeholder="Search in products..."
+              className="w-full bg-ink/5 rounded-md py-2 pl-10 pr-4 text-sm outline-none placeholder:text-ink/40 focus:ring-1 focus:ring-ink/20 transition-all"
+            />
+          </div>
+        </form>
+      </div>
 
       {/* Mobile nav */}
       <AnimatePresence>
