@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Search, ShoppingCart, Heart, User, Menu, X } from "lucide-react";
+import { Search, ShoppingCart, Heart, User, Menu, X, LayoutDashboard } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
@@ -15,6 +15,7 @@ export function Navbar() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { cartCount, favoritesCount } = useUIStore();
 
   useEffect(() => {
@@ -25,6 +26,10 @@ export function Navbar() {
 
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return;
+      const isAdminFromAuth = (user?.app_metadata as Record<string, unknown>)?.is_admin === true;
+      supabase.from("profiles").select("is_admin").eq("id", user.id).single().then(({ data: profile }) => {
+        setIsAdmin(profile?.is_admin === true || isAdminFromAuth);
+      });
       supabase.from("cart_items").select("id", { count: "exact", head: true }).eq("user_id", user.id).then(({ count }) => {
         if (count !== null) useUIStore.getState().setCartCount(count);
       });
@@ -97,11 +102,26 @@ export function Navbar() {
             </motion.div>
           </Link>
 
-          <Link href="/account">
-            <motion.div whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}>
-              <User className="h-5 w-5" />
-            </motion.div>
-          </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <motion.button whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}>
+                <User className="h-5 w-5" />
+              </motion.button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link href="/account">My Account</Link>
+              </DropdownMenuItem>
+              {isAdmin && (
+                <DropdownMenuItem asChild>
+                  <Link href="/admin" className="flex items-center gap-2">
+                    <LayoutDashboard className="h-4 w-4" />
+                    Admin Panel
+                  </Link>
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <button className="md:hidden" onClick={() => setMobileOpen((v) => !v)}>
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -148,6 +168,11 @@ export function Navbar() {
             ))}
             <Link href="/about" onClick={() => setMobileOpen(false)}>About</Link>
             <Link href="/contact" onClick={() => setMobileOpen(false)}>Contact</Link>
+            {isAdmin && (
+              <Link href="/admin" className="font-semibold flex items-center gap-2" onClick={() => setMobileOpen(false)}>
+                <LayoutDashboard className="h-4 w-4" /> Admin Panel
+              </Link>
+            )}
           </motion.nav>
         )}
       </AnimatePresence>
