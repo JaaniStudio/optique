@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Glasses } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
@@ -34,17 +35,30 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="max-w-sm mx-auto px-4 py-20">
-      <h1 className="text-2xl font-display font-bold mb-8 text-center">Welcome Back</h1>
-      <form onSubmit={handleLogin} className="space-y-4">
-        <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <Button type="submit" className="w-full" disabled={loading}>{loading ? "Signing in..." : "Sign In"}</Button>
-      </form>
-      <p className="text-sm text-center mt-6 text-ink/60">
-        Don&apos;t have an account? <Link href="/signup" className="underline">Sign up</Link>
-      </p>
+    <div className="min-h-[70vh] flex items-center justify-center px-4 py-16">
+      <div className="w-full max-w-sm">
+        <div className="text-center mb-10">
+          <Glasses className="h-10 w-10 mx-auto mb-4 text-ink/30" />
+          <h1 className="text-2xl font-display font-bold">Welcome Back</h1>
+          <p className="text-sm text-ink/50 mt-1">Sign in to your Optique account</p>
+        </div>
+
+        <form onSubmit={handleLogin} className="space-y-4">
+          <Input type="email" placeholder="Email address" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          {error && <p className="text-sm text-red-600 bg-red-50 rounded-md p-3">{error}</p>}
+          <Button type="submit" className="w-full" size="lg" disabled={loading}>
+            {loading ? "Signing in..." : "Sign In"}
+          </Button>
+        </form>
+
+        <p className="text-sm text-center mt-8 text-ink/50">
+          Don&apos;t have an account?{" "}
+          <Link href="/signup" className="text-ink font-medium underline underline-offset-4 hover:no-underline">
+            Sign up
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }
