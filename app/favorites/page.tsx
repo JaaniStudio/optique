@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Heart, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/product-card";
 import { createClient } from "@/lib/supabase/client";
 import type { Item } from "@/types";
@@ -23,18 +26,34 @@ export default function FavoritesPage() {
     })();
   }, []);
 
-  if (loading) return <div className="max-w-6xl mx-auto px-4 py-20 text-center">Loading...</div>;
+  if (loading) return <div className="max-w-6xl mx-auto px-4 py-20 text-center text-ink/50">Loading...</div>;
+
+  if (items.length === 0) {
+    return (
+      <div className="max-w-md mx-auto px-4 py-24 text-center">
+        <div className="inline-flex items-center justify-center h-20 w-20 rounded-full bg-ink/5 mb-6">
+          <Heart className="h-8 w-8 text-ink/30" />
+        </div>
+        <h1 className="text-2xl font-display font-bold mb-3">No favorites yet</h1>
+        <p className="text-ink/50 mb-8">
+          Tap the heart icon on any product to save it here and come back to it later.
+        </p>
+        <Link href="/products"><Button size="lg">Browse Products <ArrowRight className="h-4 w-4 ml-2" /></Button></Link>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-12">
-      <h1 className="text-2xl font-display font-bold mb-8">Your Favorites</h1>
-      {items.length === 0 ? (
-        <p className="text-ink/60">No favorites yet — tap the heart on any product to save it here.</p>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-          {items.map((item) => <ProductCard key={item.id} item={item} />)}
+      <div className="flex items-end justify-between mb-8">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-display font-bold">Your Favorites</h1>
+          <p className="text-ink/50 mt-1">{items.length} saved {items.length === 1 ? "item" : "items"}</p>
         </div>
-      )}
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+        {items.map((item) => <ProductCard key={item.id} item={item} />)}
+      </div>
     </div>
   );
 }
