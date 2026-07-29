@@ -21,3 +21,12 @@ body {
 
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+html {
+  scroll-behavior: smooth;
+}
+
+::selection {
+  background-color: #080808;
+  color: #f1f1f1;
+}
