@@ -10,6 +10,7 @@ import type { Item } from "@/types";
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { useUIStore } from "@/lib/store";
 
 export function ProductCard({ item }: { item: Item }) {
   const [isFav, setIsFav] = useState(false);
@@ -39,6 +40,8 @@ export function ProductCard({ item }: { item: Item }) {
       await supabase.from("favorites").insert({ user_id: user.id, item_id: item.id });
     }
     setIsFav(!isFav);
+    const { count } = await supabase.from("favorites").select("id", { count: "exact", head: true }).eq("user_id", user.id);
+    if (count !== null) useUIStore.getState().setFavoritesCount(count);
   }
 
   const price = item.on_sale && item.sale_price ? item.sale_price : item.price;
