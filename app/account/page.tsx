@@ -11,6 +11,7 @@ import type { Order } from "@/types";
 
 export default function AccountPage() {
   const [user, setUser] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -21,6 +22,16 @@ export default function AccountPage() {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
       if (user) {
+        const isAdminFromAuth = (user?.app_metadata as Record<string, unknown>)?.is_admin === true;
+
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("is_admin")
+          .eq("id", user.id)
+          .single();
+
+        setIsAdmin(profile?.is_admin === true || isAdminFromAuth);
+
         const { data } = await supabase
           .from("orders")
           .select("*, order_items(*)")
@@ -56,7 +67,16 @@ export default function AccountPage() {
         <h1 className="text-2xl font-display font-bold">My Account</h1>
         <Button variant="outline" onClick={logout}>Sign Out</Button>
       </div>
-      <p className="text-ink/60 mb-10">{user.email}</p>
+      <p className="text-ink/60 mb-4">{user.email}</p>
+
+      {isAdmin && (
+        <div className="mb-10 p-4 border border-ink/10 rounded-lg bg-white">
+          <p className="text-sm font-medium mb-2">Admin Access</p>
+          <Link href="/admin">
+            <Button>Admin Panel</Button>
+          </Link>
+        </div>
+      )}
 
       <h2 className="font-semibold mb-4">Order History</h2>
       <div className="space-y-4">
