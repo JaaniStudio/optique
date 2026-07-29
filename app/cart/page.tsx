@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Trash2 } from "lucide-react";
+import { Trash2, ShoppingBag, Minus, Plus, ArrowRight, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -55,6 +55,16 @@ export default function CartPage() {
     setCartCount(next.length);
   }
 
+  async function updateQty(id: string, delta: number) {
+    const supabase = createClient();
+    const row = rows.find((r) => r.id === id);
+    if (!row) return;
+    const newQty = Math.max(1, row.quantity + delta);
+    if (newQty === row.quantity) return;
+    await supabase.from("cart_items").update({ quantity: newQty }).eq("id", id);
+    setRows((prev) => prev.map((r) => r.id === id ? { ...r, quantity: newQty } : r));
+  }
+
   const total = rows.reduce((sum, r) => {
     const price = r.item.on_sale && r.item.sale_price ? r.item.sale_price : r.item.price;
     return sum + price * r.quantity;
@@ -90,6 +100,7 @@ export default function CartPage() {
     }));
     await supabase.from("order_items").insert(orderItems);
     await supabase.from("cart_items").delete().eq("user_id", user.id);
+    setCartCount(0);
 
     const waNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
     const summary = rows.map((r) => `${r.quantity}x ${r.item.name}`).join(", ");
@@ -103,52 +114,88 @@ export default function CartPage() {
 
   if (rows.length === 0) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-24 text-center">
-        <p className="text-ink/60 mb-4">Your cart is empty.</p>
-        <Link href="/products"><Button>Browse Products</Button></Link>
+      <div className="max-w-md mx-auto px-4 py-24 text-center">
+        <div className="inline-flex items-center justify-center h-20 w-20 rounded-full bg-ink/5 mb-6">
+          <ShoppingBag className="h-8 w-8 text-ink/30" />
+        </div>
+        <h1 className="text-2xl font-display font-bold mb-3">Your cart is empty</h1>
+        <p className="text-ink/50 mb-8">Looks like you haven't added anything yet. Browse our collection and find your perfect pair.</p>
+        <Link href="/products"><Button size="lg">Browse Products <ArrowRight className="h-4 w-4 ml-2" /></Button></Link>
       </div>
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 md:px-8 py-12 grid md:grid-cols-3 gap-10">
-      <div className="md:col-span-2 space-y-4">
-        <h1 className="text-2xl font-display font-bold mb-6">Your Cart</h1>
-        {rows.map((r) => {
-          const price = r.item.on_sale && r.item.sale_price ? r.item.sale_price : r.item.price;
-          return (
-            <div key={r.id} className="flex items-center gap-4 border border-ink/10 rounded-lg p-4 bg-white">
-              <div className="relative h-20 w-20 rounded-md overflow-hidden shrink-0 bg-cream">
-                <Image src={r.item.thumbnail_url || r.item.images?.[0]?.url || "/placeholder-glasses.svg"} alt={r.item.name} fill className="object-cover" />
+    <div className="max-w-6xl mx-auto px-4 md:px-8 py-12 grid md:grid-cols-3 gap-10">
+      <div className="md:col-span-2">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-display font-bold">Your Cart</h1>
+          <p className="text-sm text-ink/50">{rows.length} {rows.length === 1 ? "item" : "items"}</p>
+        </div>
+        <div className="space-y-4">
+          {rows.map((r) => {
+            const price = r.item.on_sale && r.item.sale_price ? r.item.sale_price : r.item.price;
+            return (
+              <div key={r.id} className="flex items-center gap-4 border border-ink/10 rounded-xl p-4 bg-white shadow-sm">
+                <div className="relative h-20 w-20 rounded-lg overflow-hidden shrink-0 bg-cream">
+                  <Image src={r.item.thumbnail_url || r.item.images?.[0]?.url || "/placeholder-glasses.svg"} alt={r.item.name} fill className="object-cover" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium truncate">{r.item.name}</p>
+                  <p className="text-sm text-ink/60 mt-0.5">{formatPKR(price)} each</p>
+                </div>
+                <div className="flex items-center border border-ink/20 rounded-lg">
+                  <button className="p-1.5 hover:bg-ink/5 transition-colors rounded-l-lg" onClick={() => updateQty(r.id, -1)}>
+                    <Minus className="h-3.5 w-3.5" />
+                  </button>
+                  <span className="px-3 text-sm font-medium min-w-[1.5rem] text-center">{r.quantity}</span>
+                  <button className="p-1.5 hover:bg-ink/5 transition-colors rounded-r-lg" onClick={() => updateQty(r.id, 1)}>
+                    <Plus className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                <p className="font-semibold min-w-[5rem] text-right">{formatPKR(price * r.quantity)}</p>
+                <button onClick={() => removeItem(r.id)} className="p-2 hover:bg-red-50 rounded-lg transition-colors">
+                  <Trash2 className="h-4 w-4 text-ink/40 hover:text-red-600" />
+                </button>
               </div>
-              <div className="flex-1">
-                <p className="font-medium">{r.item.name}</p>
-                <p className="text-sm text-ink/60">Qty: {r.quantity}</p>
-              </div>
-              <p className="font-semibold">{formatPKR(price * r.quantity)}</p>
-              <button onClick={() => removeItem(r.id)}><Trash2 className="h-4 w-4 text-ink/50 hover:text-red-600" /></button>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
-      <div className="border border-ink/10 rounded-lg p-6 bg-white h-fit space-y-4">
-        <h2 className="font-semibold text-lg">Order Summary</h2>
-        <div className="flex justify-between text-sm"><span>Subtotal</span><span>{formatPKR(total)}</span></div>
-        <div className="flex justify-between font-semibold text-base border-t border-ink/10 pt-3"><span>Total</span><span>{formatPKR(total)}</span></div>
+      <div>
+        <div className="border border-ink/10 rounded-xl p-6 bg-white shadow-sm sticky top-28 space-y-4">
+          <h2 className="font-semibold text-lg">Order Summary</h2>
 
-        <div className="space-y-3 pt-2">
-          <Input placeholder="Full Name" value={name} onChange={(e) => setName(e.target.value)} />
-          <Input placeholder="Phone Number" value={phone} onChange={(e) => setPhone(e.target.value)} />
-          <Textarea placeholder="Delivery Address" value={address} onChange={(e) => setAddress(e.target.value)} />
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between text-ink/60">
+              <span>Subtotal</span>
+              <span>{formatPKR(total)}</span>
+            </div>
+            <div className="flex justify-between text-ink/60">
+              <span>Shipping</span>
+              <span className="text-green-700 font-medium">Free</span>
+            </div>
+            <div className="flex justify-between font-semibold text-base border-t border-ink/10 pt-3">
+              <span>Total</span>
+              <span>{formatPKR(total)}</span>
+            </div>
+          </div>
+
+          <div className="space-y-3 pt-2">
+            <Input placeholder="Full Name" value={name} onChange={(e) => setName(e.target.value)} />
+            <Input placeholder="Phone Number" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            <Textarea placeholder="Delivery Address" value={address} onChange={(e) => setAddress(e.target.value)} rows={3} />
+          </div>
+
+          <Button className="w-full" size="lg" onClick={placeOrder} disabled={placing}>
+            {placing ? "Placing Order..." : "Place Order via WhatsApp"}
+          </Button>
+          <div className="flex items-center gap-2 justify-center text-xs text-ink/50">
+            <MessageCircle className="h-3.5 w-3.5" />
+            <span>You'll be redirected to WhatsApp to confirm payment</span>
+          </div>
         </div>
-
-        <Button className="w-full" size="lg" onClick={placeOrder} disabled={placing}>
-          {placing ? "Placing Order..." : "Place Order via WhatsApp"}
-        </Button>
-        <p className="text-xs text-ink/50 text-center">
-          You'll be redirected to WhatsApp to confirm payment with a screenshot.
-        </p>
       </div>
     </div>
   );
