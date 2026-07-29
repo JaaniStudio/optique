@@ -153,16 +153,10 @@ create policy "user reads own profile" on profiles for select using (auth.uid() 
 create policy "user updates own profile" on profiles for update using (auth.uid() = id);
 create policy "user inserts own profile" on profiles for insert with check (auth.uid() = id);
 
--- Service role needs table-level access for admin client
-grant usage on schema public to service_role;
-grant all on public.profiles to service_role;
-grant all on public.categories to service_role;
-grant all on public.items to service_role;
-grant all on public.cart_items to service_role;
-grant all on public.favorites to service_role;
-grant all on public.orders to service_role;
-grant all on public.order_items to service_role;
-grant all on public.site_settings to service_role;
+-- Grant table-level permissions so RLS policies can be evaluated
+grant usage on schema public to anon, authenticated, service_role;
+grant all on all tables in schema public to anon, authenticated, service_role;
+grant all on all sequences in schema public to anon, authenticated, service_role;
 
 -- Cart: user manages own cart
 create policy "user manages own cart" on cart_items for all using (auth.uid() = user_id);

@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { createClient } from "@/lib/supabase/client";
 import type { Category, Item, ItemImage } from "@/types";
-import { X, Star, UploadCloud } from "lucide-react";
+import { X, Star, UploadCloud, Loader2 } from "lucide-react";
 
 type Props = {
   open: boolean;
@@ -36,8 +36,10 @@ export function ItemFormDialog({ open, onOpenChange, categories, editingItem, on
   const [thumbnail, setThumbnail] = useState("");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadError, setUploadError] = useState("");
 
   useEffect(() => {
+    if (!open) return;
     if (editingItem) {
       setName(editingItem.name);
       setDescription(editingItem.description || "");
@@ -50,25 +52,48 @@ export function ItemFormDialog({ open, onOpenChange, categories, editingItem, on
       setThumbnail(editingItem.thumbnail_url || editingItem.images?.[0]?.url || "");
     } else {
       setName(""); setDescription(""); setPrice(""); setCategoryId(categories[0]?.id || "");
-      setStock(""); setOnSale(false); setSalePrice(""); setImages([]); setThumbnail("");
+      setStock(""); setOnSale(false); setSalePrice(""); setImages([]); setThumbnail(""); setUploadError("");
     }
   }, [editingItem, open, categories]);
 
+  function getBucketForCurrentCategory(): string | null {
+    return categories.find((c) => c.id === categoryId)?.bucket_name ?? null;
+  }
+
+  async function ensureBucket(bucketName: string): Promise<boolean> {
+    const res = await fetch("/api/admin/create-bucket", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bucketName }),
+    });
+    const data = await res.json();
+    if (!res.ok) { setUploadError(data.error || "Failed to ensure bucket"); return false; }
+    return true;
+  }
+
   async function handleUpload(files: FileList | null) {
     if (!files || !categoryId) return;
-    const category = categories.find((c) => c.id === categoryId);
-    if (!category) { alert("Select a category first."); return; }
+    const bucketName = getBucketForCurrentCategory();
+    if (!bucketName) { setUploadError("Select a category first."); return; }
     if (images.length + files.length > 5) { alert("Max 5 images per item."); return; }
 
+    setUploadError("");
     setUploading(true);
     const supabase = createClient();
     const newImages: ItemImage[] = [];
 
+    const bucketReady = await ensureBucket(bucketName);
+    if (!bucketReady) { setUploading(false); return; }
+
     for (const file of Array.from(files)) {
-      const path = `${Date.now()}-${file.name}`;
-      const { error } = await supabase.storage.from(category.bucket_name).upload(path, file);
-      if (error) { alert(`Upload failed: ${error.message}`); continue; }
-      const { data: pub } = supabase.storage.from(category.bucket_name).getPublicUrl(path);
+      if (file.size > 5 * 1024 * 1024) { setUploadError(`"${file.name}" exceeds 5MB limit.`); continue; }
+      const ext = file.name.split(".").pop();
+      const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error } = await supabase.storage.from(bucketName).upload(path, file, {
+        cacheControl: "3600", upsert: false,
+      });
+      if (error) { setUploadError(`Upload failed: ${error.message}`); continue; }
+      const { data: pub } = supabase.storage.from(bucketName).getPublicUrl(path);
       newImages.push({ url: pub.publicUrl, path });
     }
 
@@ -86,6 +111,7 @@ export function ItemFormDialog({ open, onOpenChange, categories, editingItem, on
 
   async function handleSave() {
     if (!name || !price || !categoryId) { alert("Name, price, and category are required."); return; }
+    if (images.length === 0) { alert("At least one image is required."); return; }
     setSaving(true);
     const supabase = createClient();
 
@@ -115,7 +141,7 @@ export function ItemFormDialog({ open, onOpenChange, categories, editingItem, on
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{editingItem ? "Edit Item" : "Add New Item"}</DialogTitle>
         </DialogHeader>
@@ -123,22 +149,22 @@ export function ItemFormDialog({ open, onOpenChange, categories, editingItem, on
         <div className="space-y-4">
           <div>
             <Label>Name</Label>
-            <Input className="mt-1" value={name} onChange={(e) => setName(e.target.value)} />
+            <Input className="mt-1" value={name} onChange={(e) => setName(e.target.value)} placeholder="Product name" />
           </div>
 
           <div>
             <Label>Description</Label>
-            <Textarea className="mt-1" value={description} onChange={(e) => setDescription(e.target.value)} />
+            <Textarea className="mt-1" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="Product description" />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Price (PKR)</Label>
-              <Input className="mt-1" type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
+              <Input className="mt-1" type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="e.g. 2999" />
             </div>
             <div>
               <Label>Stock Quantity</Label>
-              <Input className="mt-1" type="number" value={stock} onChange={(e) => setStock(e.target.value)} />
+              <Input className="mt-1" type="number" value={stock} onChange={(e) => setStock(e.target.value)} placeholder="e.g. 50" />
             </div>
           </div>
 
@@ -167,14 +193,15 @@ export function ItemFormDialog({ open, onOpenChange, categories, editingItem, on
           </div>
 
           <div>
-            <Label>Images (max 5) — click a photo to set it as thumbnail</Label>
+            <Label>Images (max 5) &mdash; click a photo to set it as thumbnail</Label>
+            {uploadError && <p className="text-sm text-red-600 mt-1">{uploadError}</p>}
             <div className="flex flex-wrap gap-3 mt-2">
               {images.map((img) => (
                 <div
                   key={img.url}
                   onClick={() => setThumbnail(img.url)}
-                  className={`relative h-20 w-20 rounded-md overflow-hidden border-2 cursor-pointer ${
-                    thumbnail === img.url ? "border-ink" : "border-transparent"
+                  className={`relative h-20 w-20 rounded-md overflow-hidden border-2 cursor-pointer transition-all hover:opacity-90 ${
+                    thumbnail === img.url ? "border-ink ring-1 ring-ink" : "border-border"
                   }`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -186,15 +213,15 @@ export function ItemFormDialog({ open, onOpenChange, categories, editingItem, on
                   )}
                   <button
                     onClick={(e) => { e.stopPropagation(); removeImage(img); }}
-                    className="absolute top-1 right-1 bg-white/90 rounded-full p-0.5"
+                    className="absolute top-1 right-1 bg-white/90 rounded-full p-0.5 hover:bg-white"
                   >
                     <X className="h-3 w-3" />
                   </button>
                 </div>
               ))}
               {images.length < 5 && (
-                <label className="h-20 w-20 rounded-md border-2 border-dashed border-ink/20 flex items-center justify-center cursor-pointer text-ink/40 hover:text-ink/60">
-                  <UploadCloud className="h-5 w-5" />
+                <label className="h-20 w-20 rounded-md border-2 border-dashed border-border flex items-center justify-center cursor-pointer text-ink/40 hover:text-ink/60 hover:border-ink/40 transition-colors">
+                  {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <UploadCloud className="h-5 w-5" />}
                   <input
                     type="file"
                     accept="image/*"
@@ -206,11 +233,11 @@ export function ItemFormDialog({ open, onOpenChange, categories, editingItem, on
                 </label>
               )}
             </div>
-            {uploading && <p className="text-xs text-ink/50 mt-1">Uploading...</p>}
+            {uploading && <p className="text-xs text-ink/50 mt-1">Uploading images...</p>}
           </div>
 
-          <Button className="w-full" size="lg" onClick={handleSave} disabled={saving}>
-            {saving ? "Saving..." : editingItem ? "Save Changes" : "Add Item"}
+          <Button className="w-full" size="lg" onClick={handleSave} disabled={saving || uploading}>
+            {saving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin inline" /> Saving...</> : editingItem ? "Save Changes" : "Add Item"}
           </Button>
         </div>
       </DialogContent>
