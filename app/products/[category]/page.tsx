@@ -42,6 +42,7 @@ export default async function CategoryPage({ params }: { params: { category: str
       <ProductGrid
         items={(items as Item[]) || []}
         categories={(categories as Category[]) || []}
+        showCategories={false}
       />
     </div>
   );
