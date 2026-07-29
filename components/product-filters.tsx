@@ -6,6 +6,7 @@ import type { Category } from "@/types";
 
 type Props = {
   categories: Category[];
+  showCategories?: boolean;
   query: string;
   onQueryChange: (v: string) => void;
   activeCategory: string;
@@ -18,6 +19,7 @@ type Props = {
 
 export function ProductFilters({
   categories,
+  showCategories = true,
   query,
   onQueryChange,
   activeCategory,
@@ -71,31 +73,32 @@ export function ProductFilters({
         </div>
       </div>
 
-      {/* Categories */}
-      <div>
-        <h3 className="text-sm font-semibold mb-3">Categories</h3>
-        <div className="space-y-1">
-          <button
-            onClick={() => onCategoryChange("")}
-            className={`block text-sm w-full text-left px-3 py-1.5 rounded transition-colors ${
-              !activeCategory ? "bg-ink text-cream font-medium" : "hover:bg-ink/10 text-ink/80"
-            }`}
-          >
-            All
-          </button>
-          {categories.map((cat) => (
+      {showCategories && (
+        <div>
+          <h3 className="text-sm font-semibold mb-3">Categories</h3>
+          <div className="space-y-1">
             <button
-              key={cat.id}
-              onClick={() => onCategoryChange(cat.slug)}
+              onClick={() => onCategoryChange("")}
               className={`block text-sm w-full text-left px-3 py-1.5 rounded transition-colors ${
-                activeCategory === cat.slug ? "bg-ink text-cream font-medium" : "hover:bg-ink/10 text-ink/80"
+                !activeCategory ? "bg-ink text-cream font-medium" : "hover:bg-ink/10 text-ink/80"
               }`}
             >
-              {cat.name}
+              All
             </button>
-          ))}
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => onCategoryChange(cat.slug)}
+                className={`block text-sm w-full text-left px-3 py-1.5 rounded transition-colors ${
+                  activeCategory === cat.slug ? "bg-ink text-cream font-medium" : "hover:bg-ink/10 text-ink/80"
+                }`}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Price Range */}
       <div>
