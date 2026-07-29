@@ -15,4 +15,4 @@ CREATE POLICY "user inserts own profile" ON public.profiles
 
 -- 3. Set your account as admin (replace the email with yours)
 UPDATE public.profiles SET is_admin = true
-WHERE id IN (SELECT id FROM auth.users WHERE email = 'huzaifashamsi819@gmail.com');
+WHERE id IN (SELECT id FROM auth.users WHERE email = 'email@gmail.com');
