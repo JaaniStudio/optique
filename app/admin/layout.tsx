@@ -8,9 +8,20 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   if (!user) redirect("/login");
 
+  const isAdminFromAuth = (user?.app_metadata as Record<string, unknown>)?.is_admin === true;
+
+  let isAdminFromProfile = false;
   const { data: profile } = await supabase.from("profiles").select("is_admin").eq("id", user.id).single();
 
-  if (!profile?.is_admin) redirect("/");
+  if (profile?.is_admin) {
+    isAdminFromProfile = true;
+  }
+
+  if (!isAdminFromProfile && !isAdminFromAuth) redirect("/");
+
+  if (isAdminFromAuth && !isAdminFromProfile) {
+    await supabase.from("profiles").update({ is_admin: true }).eq("id", user.id);
+  }
 
   return (
     <div className="flex bg-cream min-h-screen">
