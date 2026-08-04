@@ -8,7 +8,7 @@ import { Trash2, ShoppingBag, Minus, Plus, ArrowRight, MessageCircle } from "luc
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { formatPKR } from "@/lib/utils";
+import { formatPKR, normalizePhone } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useUIStore } from "@/lib/store";
 
@@ -76,6 +76,11 @@ export default function CartPage() {
       alert("Please fill in your name, phone, and address.");
       return;
     }
+    const normalizedPhone = normalizePhone(phone);
+    if (!normalizedPhone) {
+      alert("Please enter a valid Pakistani phone number (e.g. +92 3XX XXXXXXX).");
+      return;
+    }
     setPlacing(true);
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -85,7 +90,7 @@ export default function CartPage() {
       .from("orders")
       .insert({
         user_id: user.id, status: "pending", total,
-        customer_name: name, customer_phone: phone, shipping_address: address,
+        customer_name: name, customer_phone: normalizedPhone, shipping_address: address,
       })
       .select()
       .single();
@@ -189,7 +194,12 @@ export default function CartPage() {
 
           <div className="space-y-3 pt-2">
             <Input placeholder="Full Name" value={name} onChange={(e) => setName(e.target.value)} />
-            <Input placeholder="Phone Number" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            <Input
+              placeholder="+92 3XX XXXXXXX"
+              inputMode="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value.replace(/[^\d+]/g, ""))}
+            />
             <Textarea placeholder="Delivery Address" value={address} onChange={(e) => setAddress(e.target.value)} rows={3} />
           </div>
 
