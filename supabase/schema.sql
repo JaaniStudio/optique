@@ -14,6 +14,8 @@ create table categories (
   name text not null unique,
   slug text not null unique,
   bucket_name text not null,          -- storage bucket dedicated to this category
+  image_url text,                     -- homepage tile image (from category-images bucket)
+  image_path text,                    -- storage path used to delete the image
   created_at timestamptz default now()
 );
 
@@ -119,6 +121,24 @@ create table order_items (
 create index idx_orders_status on orders(status);
 create index idx_orders_user on orders(user_id);
 
+-- ------------------------------------------------------------
+-- 6b. REVIEWS  (only purchasers of a completed order can review)
+-- ------------------------------------------------------------
+create table reviews (
+  id uuid primary key default uuid_generate_v4(),
+  item_id uuid not null references items(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  author_name text,
+  rating int not null check (rating >= 1 and rating <= 5),
+  comment text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  unique (item_id, user_id)
+);
+
+create index idx_reviews_item on reviews(item_id);
+create index idx_reviews_user on reviews(user_id);
+
 -- Auto-adjust item stock when order items are added/removed.
 -- Decrements/replenishes a specific color's stock (case-insensitive) when a color is given.
 -- Runs as security definer so it bypasses RLS (users have no direct update on items).
@@ -222,6 +242,7 @@ alter table cart_items enable row level security;
 alter table favorites enable row level security;
 alter table orders enable row level security;
 alter table order_items enable row level security;
+alter table reviews enable row level security;
 alter table site_settings enable row level security;
 
 -- Public read for storefront
@@ -252,6 +273,34 @@ create policy "user reads own order items" on order_items for select
   using (exists (select 1 from orders o where o.id = order_id and o.user_id = auth.uid()));
 create policy "user creates own order items" on order_items for insert
   with check (exists (select 1 from orders o where o.id = order_id and o.user_id = auth.uid()));
+
+-- Reviews: public read, owner writes
+create policy "reviews are public" on reviews for select using (true);
+create policy "user inserts own review" on reviews for insert with check (auth.uid() = user_id);
+create policy "user updates own review" on reviews for update using (auth.uid() = user_id);
+create policy "user deletes own review" on reviews for delete using (auth.uid() = user_id);
+
+-- Only purchasers from a COMPLETED order may review
+create function public.enforce_review_purchase()
+returns trigger as $$
+begin
+  if not exists (
+    select 1
+    from public.orders o
+    join public.order_items oi on oi.order_id = o.id
+    where o.user_id = auth.uid()
+      and o.status = 'completed'
+      and oi.item_id = new.item_id
+  ) then
+    raise exception 'Only customers who purchased this item can review it.';
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer set search_path = public;
+
+create trigger enforce_review_purchase
+  before insert or update on public.reviews
+  for each row execute function public.enforce_review_purchase();
 
 -- Admin: full access to everything (checked via profiles.is_admin)
 create function public.is_admin()
