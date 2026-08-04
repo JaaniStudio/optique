@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Heart, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/product-card";
+import { Skeleton } from "@/components/skeleton";
 import { createClient } from "@/lib/supabase/client";
 import type { Item } from "@/types";
 
@@ -26,7 +27,21 @@ export default function FavoritesPage() {
     })();
   }, []);
 
-  if (loading) return <div className="max-w-6xl mx-auto px-4 py-20 text-center text-ink/50">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-12">
+        <div className="mb-8 space-y-3">
+          <Skeleton className="h-8 w-56" />
+          <Skeleton className="h-4 w-32" />
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Skeleton key={i} className="aspect-[3/4] rounded-xl" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (

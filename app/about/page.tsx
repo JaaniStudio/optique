@@ -1,5 +1,6 @@
 import { Shield, Sparkles, HeartHandshake, Glasses } from "lucide-react";
 import Link from "next/link";
+import { FadeIn } from "@/components/fade-in";
 
 export default function AboutPage() {
   return (
@@ -21,6 +22,7 @@ export default function AboutPage() {
 
       {/* Story */}
       <section className="mx-auto max-w-5xl px-4 md:px-8 py-20">
+        <FadeIn>
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div className="aspect-square rounded-2xl bg-gradient-to-br from-ink/10 to-ink/5 flex items-center justify-center">
             <Glasses className="h-24 w-24 text-ink/20" />
@@ -46,6 +48,7 @@ export default function AboutPage() {
             </div>
           </div>
         </div>
+        </FadeIn>
       </section>
 
       {/* Values */}
@@ -73,13 +76,15 @@ export default function AboutPage() {
                 desc: "Order with confidence. Our WhatsApp-based support means you get real help from real people, fast.",
               },
             ].map((v) => (
-              <div key={v.title} className="rounded-2xl border border-ink/10 bg-cream p-8 text-center transition-shadow hover:shadow-md">
+              <FadeIn key={v.title} delay={0.08}>
+              <div className="rounded-2xl border border-ink/10 bg-cream p-8 text-center transition-shadow hover:shadow-md">
                 <div className="inline-flex items-center justify-center h-14 w-14 rounded-full bg-ink text-cream mb-5">
                   <v.icon className="h-6 w-6" />
                 </div>
                 <h3 className="font-semibold text-lg mb-3">{v.title}</h3>
                 <p className="text-ink/60 text-sm leading-relaxed">{v.desc}</p>
               </div>
+              </FadeIn>
             ))}
           </div>
           <div className="mt-12 text-center">

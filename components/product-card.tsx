@@ -11,6 +11,7 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useUIStore } from "@/lib/store";
+import { toast } from "@/components/ui/toast";
 import { ColorSwatches } from "@/components/color-swatches";
 
 export function ProductCard({ item }: { item: Item }) {
@@ -43,6 +44,10 @@ export function ProductCard({ item }: { item: Item }) {
     setIsFav(!isFav);
     const { count } = await supabase.from("favorites").select("id", { count: "exact", head: true }).eq("user_id", user.id);
     if (count !== null) useUIStore.getState().setFavoritesCount(count);
+    toast({
+      title: isFav ? "Removed from favorites" : "Added to favorites",
+      variant: "success",
+    });
   }
 
   const price = item.on_sale && item.sale_price ? item.sale_price : item.price;
@@ -52,7 +57,7 @@ export function ProductCard({ item }: { item: Item }) {
       <motion.div
         whileHover={{ y: -6 }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
-        className="group relative rounded-xl overflow-hidden border border-ink/10 bg-white shadow-sm hover:shadow-lg transition-shadow"
+        className="group relative rounded-xl overflow-hidden border border-ink/10 bg-white shadow-sm hover:border-ink/25 hover:shadow-xl transition-shadow transition-colors"
       >
         <div className="relative aspect-square bg-cream overflow-hidden">
           <Image

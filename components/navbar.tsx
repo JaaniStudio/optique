@@ -11,7 +11,8 @@ import { useUIStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
 import { NotificationsDropdown } from "@/components/notifications-dropdown";
 
-const navLinkClass = "text-sm font-medium tracking-wide hover:opacity-60 transition-opacity outline-none";
+const navLinkClass =
+  "relative text-sm font-medium tracking-wide outline-none after:absolute after:-bottom-1.5 after:left-0 after:h-[1.5px] after:w-full after:origin-left after:scale-x-0 after:rounded-full after:bg-ink after:transition-transform after:duration-300 hover:after:scale-x-100 hover:opacity-80";
 
 const menuBoxClass =
   "absolute top-full pt-2 z-50";
@@ -52,7 +53,7 @@ export function HoverMenu({
       onMouseLeave={scheduleClose}
     >
       {href ? (
-        <Link href={href} className="flex items-center gap-1 outline-none">
+        <Link href={href} className="relative flex items-center gap-1 outline-none after:absolute after:-bottom-1.5 after:left-0 after:h-[1.5px] after:w-full after:origin-left after:scale-x-0 after:rounded-full after:bg-ink after:transition-transform after:duration-300 hover:after:scale-x-100 hover:opacity-80">
           {trigger}
         </Link>
       ) : (

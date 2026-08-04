@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Star, MessageSquare, Pencil, Trash2, CheckCircle2, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { toast } from "@/components/ui/toast";
 import type { Review } from "@/types";
 
 function StarRating({ value, onChange }: { value: number; onChange?: (v: number) => void }) {
@@ -105,6 +106,7 @@ export function ProductReviews({ itemId }: { itemId: string }) {
       const updated = { ...myReview, rating, comment, author_name: authorName };
       setMyReview(updated);
       setReviews((r) => r.map((x) => (x.id === updated.id ? updated : x)));
+      toast({ title: "Review updated", variant: "success" });
     } else {
       const { data, error: e } = await supabase
         .from("reviews")
@@ -114,6 +116,7 @@ export function ProductReviews({ itemId }: { itemId: string }) {
       if (e) { setError(e.message); setSubmitting(false); return; }
       setMyReview((data as Review) || null);
       setReviews((r) => [(data as Review), ...r]);
+      toast({ title: "Review submitted", variant: "success" });
     }
 
     setEditing(false);
@@ -133,6 +136,7 @@ export function ProductReviews({ itemId }: { itemId: string }) {
     setEditing(false);
     setRating(0);
     setComment("");
+    toast({ title: "Review deleted", variant: "success" });
   }
 
   function startEdit() {

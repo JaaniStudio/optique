@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import type { Category, Item } from "@/types";
+import { FadeIn } from "@/components/fade-in";
 
 export const revalidate = 60;
 
@@ -31,7 +32,8 @@ export default async function HomePage() {
           <h2 className="text-3xl md:text-4xl font-display font-bold">Shop by Category</h2>
           <p className="text-ink/50 mt-2">Find your perfect pair from our curated collections</p>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <FadeIn>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {(categories as Category[] | null)?.map((cat) => (
             <Link
               key={cat.id}
@@ -58,7 +60,8 @@ export default async function HomePage() {
               )}
             </Link>
           ))}
-        </div>
+          </div>
+        </FadeIn>
         <div className="mt-8 text-center">
           <Link
             href="/products"
@@ -76,11 +79,13 @@ export default async function HomePage() {
           <h2 className="text-3xl md:text-4xl font-display font-bold">New Arrivals</h2>
           <p className="text-ink/50 mt-2">The latest styles added to our collection</p>
         </div>
+        <FadeIn delay={0.1}>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
           {(items as Item[] | null)?.map((item) => (
             <ProductCard key={item.id} item={item} />
           ))}
         </div>
+      </FadeIn>
         <div className="mt-10 text-center">
           <Link
             href="/products"
@@ -93,6 +98,7 @@ export default async function HomePage() {
 
       {/* Brand story / CTA */}
       <section className="mx-auto max-w-7xl px-4 md:px-8 pb-20">
+        <FadeIn>
         <div className="relative rounded-2xl bg-gradient-to-br from-ink to-ink/80 overflow-hidden">
           <div className="relative z-10 px-8 md:px-16 py-14 md:py-16 text-center">
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-cream/50 mb-3">Chashmish</p>
@@ -110,6 +116,7 @@ export default async function HomePage() {
             </Link>
           </div>
         </div>
+        </FadeIn>
       </section>
 
       {/* Testimonials */}
