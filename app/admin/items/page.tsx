@@ -13,6 +13,7 @@ import type { Category, Item } from "@/types";
 import { formatPKR } from "@/lib/utils";
 import { Plus, Pencil, Trash2, Search, PackageOpen } from "lucide-react";
 import { ItemFormDialog } from "@/components/admin/item-form-dialog";
+import { ColorSwatches } from "@/components/color-swatches";
 
 export default function AdminItemsPage() {
   const [items, setItems] = useState<Item[]>([]);
@@ -112,6 +113,7 @@ export default function AdminItemsPage() {
             <div className="flex-1 min-w-0">
               <p className="font-medium truncate">{item.name}</p>
               <p className="text-sm text-ink/50">{item.category?.name || "No category"}</p>
+              {item.colors?.length ? <ColorSwatches colors={item.colors} size="sm" showNames={false} className="mt-1" /> : null}
             </div>
             <div className="text-right shrink-0">
               <p className="font-semibold">{formatPKR(item.on_sale && item.sale_price ? item.sale_price : item.price)}</p>
