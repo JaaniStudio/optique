@@ -240,7 +240,7 @@ export default function AccountPage() {
               </div>
               <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-sm text-ink/60">
                 {o.order_items?.map((oi) => (
-                  <span key={oi.id}>{oi.quantity}x {oi.item_name}</span>
+                  <span key={oi.id}>{oi.quantity}x {oi.item_name}{oi.color ? ` (${oi.color})` : ""}</span>
                 ))}
               </div>
               <div className="mt-4 flex justify-between items-center border-t border-ink/5 pt-4">
