@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { formatPKR } from "@/lib/utils";
+import { formatPKR, colorToHex } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useUIStore } from "@/lib/store";
 import type { Order } from "@/types";
@@ -240,7 +240,18 @@ export default function AccountPage() {
               </div>
               <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-sm text-ink/60">
                 {o.order_items?.map((oi) => (
-                  <span key={oi.id}>{oi.quantity}x {oi.item_name}{oi.color ? ` (${oi.color})` : ""}</span>
+                  <span key={oi.id} className="inline-flex items-center gap-1.5">
+                    {oi.quantity}x {oi.item_name}
+                    {oi.color ? (
+                      <>
+                        <span
+                          className="inline-block h-3 w-3 rounded-full border border-ink/15"
+                          style={{ backgroundColor: colorToHex(oi.color) }}
+                        />
+                        {oi.color}
+                      </>
+                    ) : null}
+                  </span>
                 ))}
               </div>
               <div className="mt-4 flex justify-between items-center border-t border-ink/5 pt-4">
