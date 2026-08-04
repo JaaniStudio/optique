@@ -3,6 +3,8 @@ export type Category = {
   name: string;
   slug: string;
   bucket_name: string;
+  image_url: string | null;
+  image_path: string | null;
 };
 
 export type ItemImage = { url: string; path: string };
@@ -48,6 +50,17 @@ export type OrderItem = {
   item_price: number;
   quantity: number;
   color: string;
+};
+
+export type Review = {
+  id: string;
+  item_id: string;
+  user_id: string;
+  author_name: string | null;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type Profile = {
