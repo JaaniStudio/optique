@@ -9,6 +9,7 @@ import type { Category } from "@/types";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { useUIStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
+import { NotificationsDropdown } from "@/components/notifications-dropdown";
 
 const navLinkClass = "text-sm font-medium tracking-wide hover:opacity-60 transition-opacity outline-none";
 
@@ -190,6 +191,8 @@ export function Navbar() {
               )}
             </motion.div>
           </Link>
+
+          <NotificationsDropdown />
 
           <HoverMenu
             align="right"
