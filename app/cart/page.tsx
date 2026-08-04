@@ -8,6 +8,7 @@ import { Trash2, ShoppingBag, Minus, Plus, ArrowRight, MessageCircle } from "luc
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/skeleton";
 import { formatPKR, normalizePhone } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useUIStore } from "@/lib/store";
@@ -117,7 +118,25 @@ export default function CartPage() {
     window.location.href = `https://wa.me/${waNumber}?text=${message}`;
   }
 
-  if (loading) return <div className="max-w-4xl mx-auto px-4 py-20 text-center">Loading cart...</div>;
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-12">
+        <Skeleton className="h-8 w-40 mb-8" />
+        <div className="space-y-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-4 rounded-xl border border-ink/10 p-4">
+              <Skeleton className="h-20 w-20 rounded-lg" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+              <Skeleton className="h-8 w-24" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (rows.length === 0) {
     return (
