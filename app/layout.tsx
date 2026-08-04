@@ -4,7 +4,8 @@ import "./globals.css";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { AnnouncementBanner } from "@/components/announcement-banner";
-import { ToastProvider, ToastViewport } from "@/components/ui/toast";
+import { ToastProvider } from "@/components/ui/toast";
+import { ToastHost } from "@/components/toast-host";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-display" });
@@ -23,7 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Navbar />
           <main className="min-h-screen">{children}</main>
           <Footer />
-          <ToastViewport />
+          <ToastHost />
         </ToastProvider>
       </body>
     </html>
