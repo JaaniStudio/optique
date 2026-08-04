@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatPKR } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useUIStore } from "@/lib/store";
+import { ColorSwatches } from "@/components/color-swatches";
 import type { Item } from "@/types";
 
 export function ProductDetail({ item }: { item: Item }) {
@@ -132,6 +133,13 @@ export function ProductDetail({ item }: { item: Item }) {
           </div>
 
           <p className="mt-6 text-ink/70 leading-relaxed">{item.description}</p>
+
+          {item.colors && item.colors.length > 0 && (
+            <div className="mt-5">
+              <p className="text-xs uppercase tracking-wider text-ink/50 mb-2 font-medium">Available Colors</p>
+              <ColorSwatches colors={item.colors} />
+            </div>
+          )}
 
           <p className={`mt-4 text-sm font-medium flex items-center gap-2 ${item.stock > 0 ? "text-green-700" : "text-red-600"}`}>
             <span className={`inline-block h-2 w-2 rounded-full ${item.stock > 0 ? "bg-green-600" : "bg-red-600"}`} />
