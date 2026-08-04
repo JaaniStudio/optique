@@ -61,7 +61,7 @@ export default function SignupPage() {
         <div className="text-center mb-10">
           <Glasses className="h-10 w-10 mx-auto mb-4 text-ink/30" />
           <h1 className="text-2xl font-display font-bold">Create Account</h1>
-          <p className="text-sm text-ink/50 mt-1">Join Optique and start shopping</p>
+          <p className="text-sm text-ink/50 mt-1">Join Chashmish and start shopping</p>
         </div>
 
         <form onSubmit={handleSignup} className="space-y-4">

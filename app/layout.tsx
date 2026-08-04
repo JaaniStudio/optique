@@ -10,7 +10,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-display" });
 
 export const metadata: Metadata = {
-  title: "Optique — Eyewear from Karachi",
+  title: "Chashmish — Eyewear from Karachi",
   description: "Premium sunglasses, eyeglasses & more. Shop online, pay via bank transfer.",
 };
 

@@ -52,7 +52,7 @@ export function ProductCard({ item }: { item: Item }) {
       <motion.div
         whileHover={{ y: -6 }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
-        className="group relative rounded-lg overflow-hidden border border-ink/10 bg-white"
+        className="group relative rounded-xl overflow-hidden border border-ink/10 bg-white shadow-sm hover:shadow-lg transition-shadow"
       >
         <div className="relative aspect-square bg-cream overflow-hidden">
           <Image

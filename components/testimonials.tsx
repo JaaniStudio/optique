@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const testimonials = [
-  { name: "Sarah K.", text: "Amazing quality! I've been wearing mine every day and they still look brand new. Highly recommend Optique." },
+  { name: "Sarah K.", text: "Amazing quality! I've been wearing mine every day and they still look brand new. Highly recommend Chashmish." },
   { name: "Ahmed R.", text: "Great selection and fast delivery. The prescription glasses fit perfectly and the customer service was excellent." },
   { name: "Zara M.", text: "Love my new sunglasses! The style is exactly what I was looking for and the price was very reasonable." },
   { name: "Hassan A.", text: "First time ordering online glasses and I'm impressed. The fit was perfect and they arrived sooner than expected." },

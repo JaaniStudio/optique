@@ -1,17 +1,77 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { Search, ShoppingCart, Heart, User, Menu, X, LayoutDashboard, LogOut } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Search, ShoppingCart, Heart, User, Menu, X, LayoutDashboard, LogOut, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
 import { createClient } from "@/lib/supabase/client";
 import type { Category } from "@/types";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { useUIStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
+
+const navLinkClass = "text-sm font-medium tracking-wide hover:opacity-60 transition-opacity outline-none";
+
+const menuBoxClass =
+  "absolute top-full pt-2 z-50";
+
+const menuPanelClass =
+  "min-w-[190px] overflow-hidden rounded-xl border border-ink/10 bg-white p-1.5 text-ink shadow-xl";
+
+const menuItemClass =
+  "block w-full rounded-lg px-3 py-2 text-left text-sm text-ink transition-colors hover:bg-ink hover:text-cream";
+
+export function HoverMenu({
+  href,
+  trigger,
+  items,
+  align = "left",
+}: {
+  href?: string;
+  trigger: React.ReactNode;
+  items: React.ReactNode;
+  align?: "left" | "right";
+}) {
+  const [open, setOpen] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function clearTimer() {
+    if (timer.current) clearTimeout(timer.current);
+  }
+  function openMenu() { clearTimer(); setOpen(true); }
+  function scheduleClose() {
+    clearTimer();
+    timer.current = setTimeout(() => setOpen(false), 120);
+  }
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={openMenu}
+      onMouseLeave={scheduleClose}
+    >
+      {href ? (
+        <Link href={href} className="flex items-center gap-1 outline-none">
+          {trigger}
+        </Link>
+      ) : (
+        <button className="flex items-center outline-none" aria-haspopup="menu" aria-expanded={open}>
+          {trigger}
+        </button>
+      )}
+
+      {open && (
+        <div
+          className={`${menuBoxClass} ${align === "right" ? "right-0" : "left-0"}`}
+          onMouseEnter={openMenu}
+          onClick={() => setOpen(false)}
+        >
+          <div className={menuPanelClass}>{items}</div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function Navbar() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -53,15 +113,12 @@ export function Navbar() {
     router.push("/");
   }
 
-  const navLinkClass =
-    "text-sm font-medium tracking-wide hover:opacity-60 transition-opacity";
-
   return (
     <header className="sticky top-0 z-40 w-full border-b border-ink/10 bg-cream/95 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-8">
         {/* Logo */}
         <Link href="/" className="text-xl font-display font-bold tracking-tight text-ink shrink-0">
-          OPTIQUE
+          CHASHMISH
         </Link>
 
         {/* Desktop nav + search */}
@@ -69,21 +126,32 @@ export function Navbar() {
           <nav className="flex items-center gap-6">
             <Link href="/" className={navLinkClass}>Home</Link>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger className={navLinkClass + " outline-none"}>
-                Products
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem asChild>
-                  <Link href="/products">All Products</Link>
-                </DropdownMenuItem>
-                {categories.map((c) => (
-                  <DropdownMenuItem key={c.id} asChild>
-                    <Link href={`/products/${c.slug}`}>{c.name}</Link>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <HoverMenu
+              href="/products"
+              trigger={
+                <>
+                  Products
+                  <ChevronDown className="h-3.5 w-3.5 text-ink/50" />
+                </>
+              }
+              items={
+                <>
+                  {categories.map((c) => (
+                    <Link
+                      key={c.id}
+                      href={`/products/${c.slug}`}
+                      className={menuItemClass}
+                    >
+                      {c.name}
+                    </Link>
+                  ))}
+                  <div className="my-1 h-px bg-ink/10" />
+                  <Link href="/products" className={`${menuItemClass} font-medium`}>
+                    View All Products
+                  </Link>
+                </>
+              }
+            />
 
             <Link href="/about" className={navLinkClass}>About</Link>
             <Link href="/contact" className={navLinkClass}>Contact</Link>
@@ -94,7 +162,7 @@ export function Navbar() {
             <input
               name="q"
               placeholder="Search in products..."
-              className="w-full bg-ink/5 rounded-md py-1.5 pl-9 pr-3 text-sm outline-none placeholder:text-ink/40 focus:ring-1 focus:ring-ink/20 transition-all"
+              className="w-full rounded-md bg-ink/5 py-1.5 pl-9 pr-3 text-sm outline-none placeholder:text-ink/40 focus:ring-1 focus:ring-ink/20 transition-all"
             />
           </form>
         </div>
@@ -123,34 +191,31 @@ export function Navbar() {
             </motion.div>
           </Link>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <motion.button whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}>
+          <HoverMenu
+            align="right"
+            trigger={
+              <motion.span whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }} className="block">
                 <User className="h-5 w-5" />
-              </motion.button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link href="/account">My Account</Link>
-              </DropdownMenuItem>
-              {isAdmin && (
-                <DropdownMenuItem asChild>
-                  <Link href="/admin" className="flex items-center gap-2">
+              </motion.span>
+            }
+            items={
+              <>
+                <Link href="/account" className={menuItemClass}>My Account</Link>
+                {isAdmin && (
+                  <Link href="/admin" className={`${menuItemClass} flex items-center gap-2`}>
                     <LayoutDashboard className="h-4 w-4" />
                     Admin Panel
                   </Link>
-                </DropdownMenuItem>
-              )}
-              {user && (
-                <DropdownMenuItem onClick={handleSignOut}>
-                  <span className="flex items-center gap-2 text-red-600">
+                )}
+                {user && (
+                  <button onClick={handleSignOut} className={`${menuItemClass} flex items-center gap-2 text-red-600`}>
                     <LogOut className="h-4 w-4" />
                     Sign Out
-                  </span>
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  </button>
+                )}
+              </>
+            }
+          />
 
           <button className="md:hidden" onClick={() => setMobileOpen((v) => !v)}>
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -166,7 +231,7 @@ export function Navbar() {
             <input
               name="q"
               placeholder="Search in products..."
-              className="w-full bg-ink/5 rounded-md py-2 pl-10 pr-4 text-sm outline-none placeholder:text-ink/40 focus:ring-1 focus:ring-ink/20 transition-all"
+              className="w-full rounded-md bg-ink/5 py-2 pl-10 pr-4 text-sm outline-none placeholder:text-ink/40 focus:ring-1 focus:ring-ink/20 transition-all"
             />
           </div>
         </form>
