@@ -14,7 +14,8 @@ import {
 } from "@/components/ui/select";
 import { createClient } from "@/lib/supabase/client";
 import type { Category, Item, ItemImage } from "@/types";
-import { X, Star, UploadCloud, Loader2 } from "lucide-react";
+import { colorToHex } from "@/lib/utils";
+import { X, Star, UploadCloud, Loader2, Plus } from "lucide-react";
 
 type Props = {
   open: boolean;
@@ -34,6 +35,8 @@ export function ItemFormDialog({ open, onOpenChange, categories, editingItem, on
   const [stock, setStock] = useState("");
   const [onSale, setOnSale] = useState(false);
   const [salePrice, setSalePrice] = useState("");
+  const [colors, setColors] = useState<string[]>([]);
+  const [newColor, setNewColor] = useState("");
   const [existingImages, setExistingImages] = useState<ItemImage[]>([]);
   const [pickedFiles, setPickedFiles] = useState<PickedFile[]>([]);
   const [thumbnailIndex, setThumbnailIndex] = useState(-1);
@@ -50,13 +53,15 @@ export function ItemFormDialog({ open, onOpenChange, categories, editingItem, on
       setStock(String(editingItem.stock));
       setOnSale(editingItem.on_sale);
       setSalePrice(editingItem.sale_price ? String(editingItem.sale_price) : "");
+      setColors(editingItem.colors || []);
+      setNewColor("");
       setExistingImages(editingItem.images || []);
       setPickedFiles([]);
       const existingIdx = editingItem.images?.findIndex((i) => i.url === editingItem.thumbnail_url) ?? -1;
       setThumbnailIndex(existingIdx >= 0 ? existingIdx : 0);
     } else {
       setName(""); setDescription(""); setPrice(""); setCategoryId(categories[0]?.id || "");
-      setStock(""); setOnSale(false); setSalePrice(""); setExistingImages([]); setPickedFiles([]); setThumbnailIndex(-1); setUploadError("");
+      setStock(""); setOnSale(false); setSalePrice(""); setColors([]); setNewColor(""); setExistingImages([]); setPickedFiles([]); setThumbnailIndex(-1); setUploadError("");
     }
   }, [editingItem, open, categories]);
 
@@ -121,6 +126,18 @@ export function ItemFormDialog({ open, onOpenChange, categories, editingItem, on
     return "blobUrl" in img ? img.blobUrl : img.url;
   }
 
+  function addColor() {
+    const c = newColor.trim();
+    if (!c) return;
+    if (colors.some((x) => x.toLowerCase() === c.toLowerCase())) { setNewColor(""); return; }
+    setColors([...colors, c]);
+    setNewColor("");
+  }
+
+  function removeColor(index: number) {
+    setColors(colors.filter((_, i) => i !== index));
+  }
+
   async function handleSave() {
     if (!name || !price || !categoryId) { alert("Name, price, and category are required."); return; }
     if (allImages.length === 0) { alert("At least one image is required."); return; }
@@ -161,6 +178,7 @@ export function ItemFormDialog({ open, onOpenChange, categories, editingItem, on
       stock: Number(stock) || 0,
       on_sale: onSale,
       sale_price: onSale && salePrice ? Number(salePrice) : null,
+      colors,
       images: uploadedImages,
       thumbnail_url: thumbUrl,
       updated_at: new Date().toISOString(),
@@ -229,6 +247,36 @@ export function ItemFormDialog({ open, onOpenChange, categories, editingItem, on
                 onChange={(e) => setSalePrice(e.target.value)}
               />
             )}
+          </div>
+
+          <div>
+            <Label>Available Colors (optional &mdash; e.g. Black, Gold, Tortoise)</Label>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {colors.map((color, idx) => (
+                <span
+                  key={idx}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-ink/15 bg-white px-2 py-1 text-sm"
+                >
+                  <span className="h-3.5 w-3.5 rounded-full border border-ink/15 shrink-0" style={{ backgroundColor: colorToHex(color) }} />
+                  {color}
+                  <button type="button" onClick={() => removeColor(idx)} className="text-ink/40 hover:text-red-600 transition-colors">
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </span>
+              ))}
+            </div>
+            <div className="flex gap-2 mt-2">
+              <Input
+                className="max-w-[220px]"
+                placeholder="Add a color..."
+                value={newColor}
+                onChange={(e) => setNewColor(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addColor(); } }}
+              />
+              <Button type="button" variant="outline" onClick={addColor}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
 
           <div>
