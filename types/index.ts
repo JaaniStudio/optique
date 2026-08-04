@@ -7,6 +7,8 @@ export type Category = {
 
 export type ItemImage = { url: string; path: string };
 
+export type ItemColor = { name: string; stock: number };
+
 export type Item = {
   id: string;
   name: string;
@@ -19,6 +21,7 @@ export type Item = {
   sale_price: number | null;
   images: ItemImage[];
   thumbnail_url: string | null;
+  colors: ItemColor[];
   is_active: boolean;
   created_at: string;
 };
@@ -44,6 +47,7 @@ export type OrderItem = {
   item_name: string;
   item_price: number;
   quantity: number;
+  color: string;
 };
 
 export type Profile = {
