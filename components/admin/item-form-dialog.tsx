@@ -13,8 +13,9 @@ import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from "@/components/ui/select";
 import { createClient } from "@/lib/supabase/client";
-import type { Category, Item, ItemImage } from "@/types";
-import { X, Star, UploadCloud, Loader2 } from "lucide-react";
+import type { Category, Item, ItemColor, ItemImage } from "@/types";
+import { colorToHex } from "@/lib/utils";
+import { X, Star, UploadCloud, Loader2, Plus } from "lucide-react";
 
 type Props = {
   open: boolean;
@@ -34,6 +35,9 @@ export function ItemFormDialog({ open, onOpenChange, categories, editingItem, on
   const [stock, setStock] = useState("");
   const [onSale, setOnSale] = useState(false);
   const [salePrice, setSalePrice] = useState("");
+  const [colors, setColors] = useState<ItemColor[]>([]);
+  const [newColorName, setNewColorName] = useState("");
+  const [newColorStock, setNewColorStock] = useState("");
   const [existingImages, setExistingImages] = useState<ItemImage[]>([]);
   const [pickedFiles, setPickedFiles] = useState<PickedFile[]>([]);
   const [thumbnailIndex, setThumbnailIndex] = useState(-1);
@@ -50,13 +54,16 @@ export function ItemFormDialog({ open, onOpenChange, categories, editingItem, on
       setStock(String(editingItem.stock));
       setOnSale(editingItem.on_sale);
       setSalePrice(editingItem.sale_price ? String(editingItem.sale_price) : "");
+      setColors(editingItem.colors || []);
+      setNewColorName("");
+      setNewColorStock("");
       setExistingImages(editingItem.images || []);
       setPickedFiles([]);
       const existingIdx = editingItem.images?.findIndex((i) => i.url === editingItem.thumbnail_url) ?? -1;
       setThumbnailIndex(existingIdx >= 0 ? existingIdx : 0);
     } else {
       setName(""); setDescription(""); setPrice(""); setCategoryId(categories[0]?.id || "");
-      setStock(""); setOnSale(false); setSalePrice(""); setExistingImages([]); setPickedFiles([]); setThumbnailIndex(-1); setUploadError("");
+      setStock(""); setOnSale(false); setSalePrice(""); setColors([]); setNewColorName(""); setNewColorStock(""); setExistingImages([]); setPickedFiles([]); setThumbnailIndex(-1); setUploadError("");
     }
   }, [editingItem, open, categories]);
 
@@ -121,6 +128,20 @@ export function ItemFormDialog({ open, onOpenChange, categories, editingItem, on
     return "blobUrl" in img ? img.blobUrl : img.url;
   }
 
+  function addColor() {
+    const name = newColorName.trim();
+    if (!name) return;
+    if (colors.some((c) => c.name.toLowerCase() === name.toLowerCase())) { setNewColorName(""); setNewColorStock(""); return; }
+    const stock = Math.max(0, Number(newColorStock) || 0);
+    setColors([...colors, { name, stock }]);
+    setNewColorName("");
+    setNewColorStock("");
+  }
+
+  function removeColor(index: number) {
+    setColors(colors.filter((_, i) => i !== index));
+  }
+
   async function handleSave() {
     if (!name || !price || !categoryId) { alert("Name, price, and category are required."); return; }
     if (allImages.length === 0) { alert("At least one image is required."); return; }
@@ -153,14 +174,19 @@ export function ItemFormDialog({ open, onOpenChange, categories, editingItem, on
       ? uploadedImages[thumbnailIndex].url
       : uploadedImages[0].url;
 
+    const totalStock = colors.length > 0
+      ? colors.reduce((s, c) => s + c.stock, 0)
+      : (Number(stock) || 0);
+
     const payload = {
       name,
       description,
       price: Number(price),
       category_id: categoryId,
-      stock: Number(stock) || 0,
+      stock: totalStock,
       on_sale: onSale,
       sale_price: onSale && salePrice ? Number(salePrice) : null,
+      colors,
       images: uploadedImages,
       thumbnail_url: thumbUrl,
       updated_at: new Date().toISOString(),
@@ -201,10 +227,17 @@ export function ItemFormDialog({ open, onOpenChange, categories, editingItem, on
               <Label>Price (PKR)</Label>
               <Input className="mt-1" type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="e.g. 2999" />
             </div>
-            <div>
-              <Label>Stock Quantity</Label>
-              <Input className="mt-1" type="number" value={stock} onChange={(e) => setStock(e.target.value)} placeholder="e.g. 50" />
-            </div>
+            {colors.length === 0 ? (
+              <div>
+                <Label>Stock Quantity</Label>
+                <Input className="mt-1" type="number" value={stock} onChange={(e) => setStock(e.target.value)} placeholder="e.g. 50" />
+              </div>
+            ) : (
+              <div>
+                <Label>Total Stock (auto: sum of colors)</Label>
+                <Input className="mt-1" type="number" value={colors.reduce((s, c) => s + c.stock, 0)} disabled />
+              </div>
+            )}
           </div>
 
           <div>
@@ -229,6 +262,56 @@ export function ItemFormDialog({ open, onOpenChange, categories, editingItem, on
                 onChange={(e) => setSalePrice(e.target.value)}
               />
             )}
+          </div>
+
+          <div>
+            <Label>Available Colors &amp; Stock (optional)</Label>
+            <p className="text-xs text-ink/50 mt-0.5">Give each color its own stock. Total stock is the sum.</p>
+            <div className="flex flex-col gap-2 mt-2">
+              {colors.map((color, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center gap-2 rounded-md border border-ink/15 bg-white px-2 py-1.5 text-sm"
+                >
+                  <span className="h-4 w-4 rounded-full border border-ink/15 shrink-0" style={{ backgroundColor: colorToHex(color.name) }} />
+                  <span className="flex-1 min-w-0">{color.name}</span>
+                  <Input
+                    className="w-24 h-8"
+                    type="number"
+                    min={0}
+                    value={String(color.stock)}
+                    onChange={(e) => {
+                      const v = Math.max(0, Number(e.target.value) || 0);
+                      setColors(colors.map((c, i) => i === idx ? { ...c, stock: v } : c));
+                    }}
+                  />
+                  <button type="button" onClick={() => removeColor(idx)} className="text-ink/40 hover:text-red-600 transition-colors">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              <Input
+                className="max-w-[180px]"
+                placeholder="Color (e.g. Black)"
+                value={newColorName}
+                onChange={(e) => setNewColorName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addColor(); } }}
+              />
+              <Input
+                className="max-w-[110px]"
+                type="number"
+                min={0}
+                placeholder="Stock"
+                value={newColorStock}
+                onChange={(e) => setNewColorStock(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addColor(); } }}
+              />
+              <Button type="button" variant="outline" onClick={addColor}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
 
           <div>

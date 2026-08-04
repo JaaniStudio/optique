@@ -132,7 +132,7 @@ export default function AdminOrdersPage() {
               <div className="text-sm text-ink/60 mt-3 pt-3 border-t border-ink/5 space-y-0.5">
                 {o.order_items.map((oi) => (
                   <p key={oi.id} className="flex justify-between">
-                    <span>{oi.quantity}x {oi.item_name}</span>
+                    <span>{oi.quantity}x {oi.item_name}{oi.color ? ` (${oi.color})` : ""}</span>
                     <span>{formatPKR(oi.item_price * oi.quantity)}</span>
                   </p>
                 ))}

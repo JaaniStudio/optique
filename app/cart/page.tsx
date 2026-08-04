@@ -15,6 +15,7 @@ import { useUIStore } from "@/lib/store";
 type CartRow = {
   id: string;
   quantity: number;
+  color: string;
   item: {
     id: string; name: string; price: number; on_sale: boolean;
     sale_price: number | null; thumbnail_url: string | null; images: any[];
@@ -38,7 +39,7 @@ export default function CartPage() {
 
     const { data } = await supabase
       .from("cart_items")
-      .select("id, quantity, item:items(id, name, price, on_sale, sale_price, thumbnail_url, images)")
+      .select("id, quantity, color, item:items(id, name, price, on_sale, sale_price, thumbnail_url, images)")
       .eq("user_id", user.id);
 
     setRows((data as any) || []);
@@ -97,13 +98,14 @@ export default function CartPage() {
       item_name: r.item.name,
       item_price: r.item.on_sale && r.item.sale_price ? r.item.sale_price : r.item.price,
       quantity: r.quantity,
+      color: r.color || "",
     }));
     await supabase.from("order_items").insert(orderItems);
     await supabase.from("cart_items").delete().eq("user_id", user.id);
     setCartCount(0);
 
     const waNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
-    const summary = rows.map((r) => `${r.quantity}x ${r.item.name}`).join(", ");
+    const summary = rows.map((r) => `${r.quantity}x ${r.item.name}${r.color ? ` (${r.color})` : ""}`).join(", ");
     const message = encodeURIComponent(
       `Hi! I placed order #${order.id.slice(0, 8)} for: ${summary}. Total: ${formatPKR(total)}. I'll send my payment screenshot here.`
     );
@@ -142,6 +144,9 @@ export default function CartPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium truncate">{r.item.name}</p>
+                  {r.color && (
+                    <p className="text-xs text-ink/50 mt-0.5">Color: <span className="font-medium text-ink/70">{r.color}</span></p>
+                  )}
                   <p className="text-sm text-ink/60 mt-0.5">{formatPKR(price)} each</p>
                 </div>
                 <div className="flex items-center border border-ink/20 rounded-lg">

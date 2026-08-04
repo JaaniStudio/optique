@@ -13,6 +13,7 @@ import type { Category, Item } from "@/types";
 import { formatPKR } from "@/lib/utils";
 import { Plus, Pencil, Trash2, Search, PackageOpen } from "lucide-react";
 import { ItemFormDialog } from "@/components/admin/item-form-dialog";
+import { ColorSwatches } from "@/components/color-swatches";
 
 export default function AdminItemsPage() {
   const [items, setItems] = useState<Item[]>([]);
@@ -63,10 +64,18 @@ export default function AdminItemsPage() {
   }
 
   async function toggleStock(item: Item, delta: number) {
-    const newStock = Math.max(0, item.stock + delta);
-    setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, stock: newStock } : i));
     const supabase = createClient();
-    await supabase.from("items").update({ stock: newStock }).eq("id", item.id);
+    let colors = item.colors || [];
+    let stock: number;
+    if (colors.length > 0) {
+      const updated = colors.map((c, i) => i === 0 ? { ...c, stock: Math.max(0, c.stock + delta) } : c);
+      stock = updated.reduce((s, c) => s + c.stock, 0);
+      colors = updated;
+    } else {
+      stock = Math.max(0, item.stock + delta);
+    }
+    setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, stock, colors } : i));
+    await supabase.from("items").update({ stock, colors }).eq("id", item.id);
   }
 
   const filtered = items.filter((i) => {
@@ -112,6 +121,7 @@ export default function AdminItemsPage() {
             <div className="flex-1 min-w-0">
               <p className="font-medium truncate">{item.name}</p>
               <p className="text-sm text-ink/50">{item.category?.name || "No category"}</p>
+              {item.colors?.length ? <ColorSwatches colors={item.colors} size="sm" showNames={false} className="mt-1" /> : null}
             </div>
             <div className="text-right shrink-0">
               <p className="font-semibold">{formatPKR(item.on_sale && item.sale_price ? item.sale_price : item.price)}</p>

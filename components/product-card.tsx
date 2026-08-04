@@ -11,6 +11,7 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useUIStore } from "@/lib/store";
+import { ColorSwatches } from "@/components/color-swatches";
 
 export function ProductCard({ item }: { item: Item }) {
   const [isFav, setIsFav] = useState(false);
@@ -83,6 +84,7 @@ export function ProductCard({ item }: { item: Item }) {
               <span className="text-sm text-ink/40 line-through">{formatPKR(item.price)}</span>
             )}
           </div>
+          {item.colors?.length ? <ColorSwatches colors={item.colors} size="sm" showNames={false} className="mt-2" /> : null}
           <span className="mt-3 inline-block text-xs font-medium underline underline-offset-4 opacity-0 group-hover:opacity-100 transition-opacity">
             View Details
           </span>

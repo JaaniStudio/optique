@@ -57,6 +57,7 @@ create table items (
   sale_price numeric(10,2),
   images jsonb default '[]'::jsonb,      -- array of { url, path } up to 5
   thumbnail_url text,                     -- chosen thumbnail among images
+  colors jsonb default '[]'::jsonb,       -- array of { name, stock }
   is_active boolean default true,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
@@ -72,9 +73,10 @@ create table cart_items (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid references auth.users(id) on delete cascade,
   item_id uuid references items(id) on delete cascade,
+  color text not null default '',
   quantity int not null default 1,
   created_at timestamptz default now(),
-  unique (user_id, item_id)
+  unique (user_id, item_id, color)
 );
 
 -- ------------------------------------------------------------
@@ -110,11 +112,65 @@ create table order_items (
   item_id uuid references items(id) on delete set null,
   item_name text not null,       -- snapshot at time of order
   item_price numeric(10,2) not null,
-  quantity int not null
+  quantity int not null,
+  color text not null default ''  -- color chosen by the customer
 );
 
 create index idx_orders_status on orders(status);
 create index idx_orders_user on orders(user_id);
+
+-- Auto-adjust item stock when order items are added/removed.
+-- Decrements/replenishes a specific color's stock when a color is given.
+-- Runs as security definer so it bypasses RLS (users have no direct update on items).
+create function public.adjust_stock_on_order_item()
+returns trigger as $$
+begin
+  if tg_op = 'INSERT' then
+    if new.color is null or new.color = '' then
+      update public.items set stock = greatest(0, stock - new.quantity) where id = new.item_id;
+    else
+      update public.items
+      set stock = greatest(0, stock - new.quantity),
+          colors = (
+            select jsonb_agg(
+              case when (c->>'name') = new.color
+                   then jsonb_build_object('name', c->>'name', 'stock', greatest(0, (c->>'stock')::int - new.quantity))
+                   else c
+              end
+            )
+            from jsonb_array_elements(colors) c
+          )
+      where id = new.item_id;
+    end if;
+  elsif tg_op = 'DELETE' then
+    if old.color is null or old.color = '' then
+      update public.items set stock = stock + old.quantity where id = old.item_id;
+    else
+      update public.items
+      set stock = stock + old.quantity,
+          colors = (
+            select jsonb_agg(
+              case when (c->>'name') = old.color
+                   then jsonb_build_object('name', c->>'name', 'stock', (c->>'stock')::int + old.quantity)
+                   else c
+              end
+            )
+            from jsonb_array_elements(colors) c
+          )
+      where id = old.item_id;
+    end if;
+  end if;
+  return null;
+end;
+$$ language plpgsql security definer set search_path = public;
+
+create trigger on_order_item_insert
+  after insert on public.order_items
+  for each row execute function public.adjust_stock_on_order_item();
+
+create trigger on_order_item_delete
+  after delete on public.order_items
+  for each row execute function public.adjust_stock_on_order_item();
 
 -- ------------------------------------------------------------
 -- 7. SITE SETTINGS (admin-editable banner)
