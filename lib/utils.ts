@@ -45,3 +45,12 @@ export function colorToHex(color: string): string {
   const key = color.trim().toLowerCase();
   return COLOR_HEX[key] ?? "#cbd5e1";
 }
+
+export function normalizePhone(input: string): string | null {
+  let digits = input.replace(/[^\d]/g, "");
+  if (digits.startsWith("0092")) digits = digits.slice(4);
+  if (digits.startsWith("92")) digits = digits.slice(2);
+  if (digits.startsWith("0")) digits = digits.slice(1);
+  if (digits.length !== 10 || !digits.startsWith("3")) return null;
+  return `+92${digits}`;
+}
