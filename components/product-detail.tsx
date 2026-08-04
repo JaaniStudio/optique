@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatPKR, colorToHex } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useUIStore } from "@/lib/store";
+import { toast } from "@/components/ui/toast";
 import type { Item } from "@/types";
 import { ProductReviews } from "@/components/product-reviews";
 
@@ -67,6 +68,11 @@ export function ProductDetail({ item }: { item: Item }) {
     setAdding(false);
     const { count } = await supabase.from("cart_items").select("id", { count: "exact", head: true }).eq("user_id", user.id);
     if (count !== null) setCartCount(count);
+    toast({
+      title: "Added to cart",
+      description: `${qty}x ${item.name}${hasColors && selectedColor ? ` (${selectedColor})` : ""}`,
+      variant: "success",
+    });
   }
 
   async function toggleFavorite() {
@@ -84,6 +90,10 @@ export function ProductDetail({ item }: { item: Item }) {
     setIsFav(!isFav);
     const { count } = await supabase.from("favorites").select("id", { count: "exact", head: true }).eq("user_id", user.id);
     if (count !== null) useUIStore.getState().setFavoritesCount(count);
+    toast({
+      title: isFav ? "Removed from favorites" : "Added to favorites",
+      variant: "success",
+    });
   }
 
   return (
