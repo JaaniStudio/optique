@@ -81,3 +81,14 @@ export type SiteSettings = {
   banner_text_color: string;
   bank_account_details: string | null;
 };
+
+export type AppNotification = {
+  id: string;
+  user_id: string;
+  type: string | null;
+  title: string | null;
+  message: string | null;
+  link: string | null;
+  is_read: boolean;
+  created_at: string;
+};

@@ -233,6 +233,64 @@ create table site_settings (
 insert into site_settings (id) values (1);
 
 -- ------------------------------------------------------------
+-- 8. NOTIFICATIONS  (navbar bell; admins + user order updates)
+-- ------------------------------------------------------------
+create table notifications (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  type text,
+  title text,
+  message text,
+  link text,
+  is_read boolean not null default false,
+  created_at timestamptz default now()
+);
+
+create index idx_notifications_user on notifications(user_id, is_read, created_at desc);
+create index idx_notifications_user_created on notifications(user_id, created_at desc);
+
+-- Notify all admins when an order is placed
+create function public.notify_admins_on_order()
+returns trigger as $$
+begin
+  insert into public.notifications (user_id, type, title, message, link)
+  select id, 'new_order', 'New Order Placed',
+         'Order #' || left(new.id::text, 8) || ' has been placed (PKR ' || new.total::text || ').',
+         '/admin/orders'
+  from public.profiles
+  where is_admin = true;
+  return new;
+end;
+$$ language plpgsql security definer set search_path = public;
+
+create trigger on_order_created_notify
+  after insert on public.orders
+  for each row execute function public.notify_admins_on_order();
+
+-- Notify the user when their order moves to in_transit / completed
+create function public.notify_user_on_status()
+returns trigger as $$
+begin
+  if new.user_id is not null and new.status <> old.status then
+    if new.status = 'in_transit' then
+      insert into public.notifications (user_id, type, title, message, link)
+      values (new.user_id, 'order_status', 'Order In Transit',
+              'Your order #' || left(new.id::text, 8) || ' is on its way!', '/account');
+    elsif new.status = 'completed' then
+      insert into public.notifications (user_id, type, title, message, link)
+      values (new.user_id, 'order_status', 'Order Delivered',
+              'Your order #' || left(new.id::text, 8) || ' has been delivered. Enjoy!', '/account');
+    end if;
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer set search_path = public;
+
+create trigger on_order_status_notify
+  after update on public.orders
+  for each row execute function public.notify_user_on_status();
+
+-- ------------------------------------------------------------
 -- ROW LEVEL SECURITY
 -- ------------------------------------------------------------
 alter table categories enable row level security;
@@ -243,6 +301,7 @@ alter table favorites enable row level security;
 alter table orders enable row level security;
 alter table order_items enable row level security;
 alter table reviews enable row level security;
+alter table notifications enable row level security;
 alter table site_settings enable row level security;
 
 -- Public read for storefront
@@ -302,6 +361,11 @@ create trigger enforce_review_purchase
   before insert or update on public.reviews
   for each row execute function public.enforce_review_purchase();
 
+-- Notifications live on the navbar for logged-in users
+create policy "user reads own notifications" on notifications for select using (auth.uid() = user_id);
+create policy "user updates own notifications" on notifications for update using (auth.uid() = user_id);
+create policy "user deletes own notifications" on notifications for delete using (auth.uid() = user_id);
+
 -- Admin: full access to everything (checked via profiles.is_admin)
 create function public.is_admin()
 returns boolean as $$
@@ -322,6 +386,7 @@ alter publication supabase_realtime add table orders;
 alter publication supabase_realtime add table items;
 alter publication supabase_realtime add table profiles;
 alter publication supabase_realtime add table site_settings;
+alter publication supabase_realtime add table notifications;
 
 -- ------------------------------------------------------------
 -- SEED CATEGORIES (creates one storage bucket name per category —
