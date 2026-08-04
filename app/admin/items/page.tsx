@@ -63,21 +63,6 @@ export default function AdminItemsPage() {
     await supabase.from("items").delete().eq("id", id);
   }
 
-  async function toggleStock(item: Item, delta: number) {
-    const supabase = createClient();
-    let colors = item.colors || [];
-    let stock: number;
-    if (colors.length > 0) {
-      const updated = colors.map((c, i) => i === 0 ? { ...c, stock: Math.max(0, c.stock + delta) } : c);
-      stock = updated.reduce((s, c) => s + c.stock, 0);
-      colors = updated;
-    } else {
-      stock = Math.max(0, item.stock + delta);
-    }
-    setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, stock, colors } : i));
-    await supabase.from("items").update({ stock, colors }).eq("id", item.id);
-  }
-
   const filtered = items.filter((i) => {
     const matchesSearch = !search || i.name.toLowerCase().includes(search.toLowerCase());
     const matchesCategory = categoryFilter === "all" || i.category_id === categoryFilter;
@@ -127,11 +112,7 @@ export default function AdminItemsPage() {
               <p className="font-semibold">{formatPKR(item.on_sale && item.sale_price ? item.sale_price : item.price)}</p>
               {item.on_sale && <Badge variant="sale" className="mt-1">SALE</Badge>}
             </div>
-            <div className="flex items-center gap-1 text-sm shrink-0">
-              <button onClick={() => toggleStock(item, -1)} className="h-8 w-8 border border-ink/15 rounded-md hover:bg-cream transition-colors">-</button>
-              <span className="w-10 text-center font-medium">{item.stock}</span>
-              <button onClick={() => toggleStock(item, 1)} className="h-8 w-8 border border-ink/15 rounded-md hover:bg-cream transition-colors">+</button>
-            </div>
+            <span className="text-sm text-ink/60 shrink-0 font-medium">{item.stock} in stock</span>
             <Button size="sm" variant="outline" onClick={() => { setEditingItem(item); setDialogOpen(true); }}>
               <Pencil className="h-3.5 w-3.5" />
             </Button>
