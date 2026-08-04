@@ -57,6 +57,7 @@ create table items (
   sale_price numeric(10,2),
   images jsonb default '[]'::jsonb,      -- array of { url, path } up to 5
   thumbnail_url text,                     -- chosen thumbnail among images
+  colors text[] default '{}'::text[],     -- available frame colors
   is_active boolean default true,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
@@ -115,6 +116,28 @@ create table order_items (
 
 create index idx_orders_status on orders(status);
 create index idx_orders_user on orders(user_id);
+
+-- Auto-adjust item stock when order items are added/removed.
+-- Runs as security definer so it bypasses RLS (users have no direct update on items).
+create function public.adjust_stock_on_order_item()
+returns trigger as $$
+begin
+  if tg_op = 'INSERT' then
+    update public.items set stock = greatest(0, stock - new.quantity) where id = new.item_id;
+  elsif tg_op = 'DELETE' then
+    update public.items set stock = stock + old.quantity where id = old.item_id;
+  end if;
+  return null;
+end;
+$$ language plpgsql security definer set search_path = public;
+
+create trigger on_order_item_insert
+  after insert on public.order_items
+  for each row execute function public.adjust_stock_on_order_item();
+
+create trigger on_order_item_delete
+  after delete on public.order_items
+  for each row execute function public.adjust_stock_on_order_item();
 
 -- ------------------------------------------------------------
 -- 7. SITE SETTINGS (admin-editable banner)
