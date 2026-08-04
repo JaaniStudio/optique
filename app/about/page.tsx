@@ -7,7 +7,7 @@ export default function AboutPage() {
       <section className="bg-gradient-to-br from-ink to-ink/90 text-cream py-20 md:py-28">
         <div className="mx-auto max-w-4xl px-4 md:px-8 text-center">
           <Glasses className="h-10 w-10 mx-auto mb-6 opacity-60" />
-          <h1 className="text-4xl md:text-6xl font-display font-bold mb-6">About Optique</h1>
+          <h1 className="text-4xl md:text-6xl font-display font-bold mb-6">About Chashmish</h1>
           <p className="text-lg md:text-xl text-cream/70 max-w-2xl mx-auto leading-relaxed">
             Karachi-based eyewear bringing you carefully curated sunglasses, eyeglasses,
             and reading glasses — selected for quality, comfort, and everyday style.
@@ -25,7 +25,7 @@ export default function AboutPage() {
             <h2 className="text-2xl md:text-3xl font-display font-bold mb-6">Our Story</h2>
             <div className="space-y-4 text-ink/70 leading-relaxed">
               <p>
-                Optique was born from a simple belief: great eyewear shouldn't be complicated.
+                Chashmish was born from a simple belief: great eyewear shouldn't be complicated.
                 We started with a small collection of handpicked frames and grew into a
                 go-to destination for quality glasses in Pakistan.
               </p>

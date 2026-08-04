@@ -29,8 +29,8 @@ export default function ContactPage() {
             {
               icon: Mail,
               title: "Email",
-              value: "hello@optique.pk",
-              href: "mailto:hello@optique.pk",
+              value: "hello@chashmish.pk",
+              href: "mailto:hello@chashmish.pk",
               label: "Send Email",
             },
             {

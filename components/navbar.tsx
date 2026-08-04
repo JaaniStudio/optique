@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Search, ShoppingCart, Heart, User, Menu, X, LayoutDashboard, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -17,10 +17,23 @@ export function Navbar() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const [productsOpen, setProductsOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [isAdmin, setIsAdmin] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const { cartCount, favoritesCount } = useUIStore();
   const router = useRouter();
+
+  function cancelClose() {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+  }
+
+  function scheduleClose(setOpen: (v: boolean) => void) {
+    cancelClose();
+    hoverTimer.current = setTimeout(() => setOpen(false), 140);
+  }
 
   useEffect(() => {
     const supabase = createClient();
@@ -61,7 +74,7 @@ export function Navbar() {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-8">
         {/* Logo */}
         <Link href="/" className="text-xl font-display font-bold tracking-tight text-ink shrink-0">
-          OPTIQUE
+          CHASHMISH
         </Link>
 
         {/* Desktop nav + search */}
@@ -69,21 +82,32 @@ export function Navbar() {
           <nav className="flex items-center gap-6">
             <Link href="/" className={navLinkClass}>Home</Link>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger className={navLinkClass + " outline-none"}>
-                Products
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem asChild>
-                  <Link href="/products">All Products</Link>
-                </DropdownMenuItem>
-                {categories.map((c) => (
-                  <DropdownMenuItem key={c.id} asChild>
-                    <Link href={`/products/${c.slug}`}>{c.name}</Link>
+            <div
+              className="relative"
+              onMouseEnter={() => { cancelClose(); setProductsOpen(true); }}
+              onMouseLeave={() => scheduleClose(setProductsOpen)}
+            >
+              <DropdownMenu open={productsOpen} onOpenChange={setProductsOpen}>
+                <DropdownMenuTrigger asChild>
+                  <Link href="/products" className={navLinkClass + " outline-none"}>
+                    Products
+                  </Link>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  onMouseEnter={() => { cancelClose(); setProductsOpen(true); }}
+                  onMouseLeave={() => scheduleClose(setProductsOpen)}
+                >
+                  <DropdownMenuItem asChild>
+                    <Link href="/products">All Products</Link>
                   </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  {categories.map((c) => (
+                    <DropdownMenuItem key={c.id} asChild>
+                      <Link href={`/products/${c.slug}`}>{c.name}</Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
 
             <Link href="/about" className={navLinkClass}>About</Link>
             <Link href="/contact" className={navLinkClass}>Contact</Link>
@@ -123,34 +147,44 @@ export function Navbar() {
             </motion.div>
           </Link>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <motion.button whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}>
-                <User className="h-5 w-5" />
-              </motion.button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link href="/account">My Account</Link>
-              </DropdownMenuItem>
-              {isAdmin && (
+          <div
+            className="relative"
+            onMouseEnter={() => { cancelClose(); setProfileOpen(true); }}
+            onMouseLeave={() => scheduleClose(setProfileOpen)}
+          >
+            <DropdownMenu open={profileOpen} onOpenChange={setProfileOpen}>
+              <DropdownMenuTrigger asChild>
+                <motion.button whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}>
+                  <User className="h-5 w-5" />
+                </motion.button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                onMouseEnter={() => { cancelClose(); setProfileOpen(true); }}
+                onMouseLeave={() => scheduleClose(setProfileOpen)}
+              >
                 <DropdownMenuItem asChild>
-                  <Link href="/admin" className="flex items-center gap-2">
-                    <LayoutDashboard className="h-4 w-4" />
-                    Admin Panel
-                  </Link>
+                  <Link href="/account">My Account</Link>
                 </DropdownMenuItem>
-              )}
-              {user && (
-                <DropdownMenuItem onClick={handleSignOut}>
-                  <span className="flex items-center gap-2 text-red-600">
-                    <LogOut className="h-4 w-4" />
-                    Sign Out
-                  </span>
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin" className="flex items-center gap-2">
+                      <LayoutDashboard className="h-4 w-4" />
+                      Admin Panel
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                {user && (
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <span className="flex items-center gap-2 text-red-600">
+                      <LogOut className="h-4 w-4" />
+                      Sign Out
+                    </span>
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
           <button className="md:hidden" onClick={() => setMobileOpen((v) => !v)}>
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}

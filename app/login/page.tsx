@@ -41,7 +41,7 @@ export default function LoginPage() {
         <div className="text-center mb-10">
           <Glasses className="h-10 w-10 mx-auto mb-4 text-ink/30" />
           <h1 className="text-2xl font-display font-bold">Welcome Back</h1>
-          <p className="text-sm text-ink/50 mt-1">Sign in to your Optique account</p>
+          <p className="text-sm text-ink/50 mt-1">Sign in to your Chashmish account</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
