@@ -12,6 +12,7 @@ import { formatPKR, colorToHex } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useUIStore } from "@/lib/store";
 import type { Item } from "@/types";
+import { ProductReviews } from "@/components/product-reviews";
 
 export function ProductDetail({ item }: { item: Item }) {
   const images = item.images?.length ? item.images : [{ url: "/placeholder-glasses.svg", path: "" }];
@@ -224,6 +225,8 @@ export function ProductDetail({ item }: { item: Item }) {
           </div>
         </div>
       </div>
+
+      <ProductReviews itemId={item.id} />
     </div>
   );
 }

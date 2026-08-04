@@ -2,6 +2,7 @@ import { HeroSlider } from "@/components/hero-slider";
 import { ProductCard } from "@/components/product-card";
 import { Testimonials } from "@/components/testimonials";
 import { createClient } from "@/lib/supabase/server";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import type { Category, Item } from "@/types";
@@ -37,14 +38,24 @@ export default async function HomePage() {
               href={`/products/${cat.slug}`}
               className="group relative aspect-[4/5] rounded-xl overflow-hidden bg-gradient-to-br from-ink/90 to-ink shadow-sm hover:shadow-lg transition-shadow"
             >
+              {cat.image_url && (
+                <Image
+                  src={cat.image_url}
+                  alt={cat.name}
+                  fill
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent z-10" />
               <div className="absolute inset-0 flex flex-col items-center justify-end pb-6 z-20">
-                <span className="text-cream font-semibold text-lg tracking-wide">{cat.name}</span>
-                <span className="text-cream/70 text-xs mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="text-cream font-semibold text-lg tracking-wide drop-shadow-sm">{cat.name}</span>
+                <span className="text-cream/80 text-xs mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   Browse Collection →
                 </span>
               </div>
-              <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity z-10" />
+              {!cat.image_url && (
+                <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity z-10" />
+              )}
             </Link>
           ))}
         </div>
