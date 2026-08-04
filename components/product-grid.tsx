@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { ProductCard } from "@/components/product-card";
 import { ProductFilters } from "@/components/product-filters";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, PackageSearch } from "lucide-react";
 import type { Item, Category } from "@/types";
 
 const PER_PAGE = 9;
@@ -71,7 +71,19 @@ export function ProductGrid({ items, categories, showCategories = true }: Props)
           ))}
         </div>
         {filtered.length === 0 && (
-          <p className="text-center text-ink/50 py-20">No products found.</p>
+          <div className="text-center py-20">
+            <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-ink/5 mb-4">
+              <PackageSearch className="h-7 w-7 text-ink/30" />
+            </div>
+            <p className="font-semibold text-lg text-ink">No products found</p>
+            <p className="text-ink/50 text-sm mt-1 mb-6">Try adjusting your search or filters.</p>
+            <button
+              onClick={() => { setQuery(""); setActiveCategory(""); setMinPrice(""); setMaxPrice(""); setPage(1); }}
+              className="rounded-full bg-ink px-6 py-2.5 text-sm font-semibold text-cream transition-colors hover:bg-ink/85"
+            >
+              Clear all filters
+            </button>
+          </div>
         )}
 
         {/* Pagination */}
