@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { GoogleButton } from "@/components/google-button";
 import { Glasses } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -72,6 +73,14 @@ export default function SignupPage() {
             {loading ? "Creating account..." : "Sign Up"}
           </Button>
         </form>
+
+        <div className="flex items-center gap-3 my-6">
+          <div className="h-px flex-1 bg-ink/10" />
+          <span className="text-xs uppercase tracking-wider text-ink/40">or</span>
+          <div className="h-px flex-1 bg-ink/10" />
+        </div>
+
+        <GoogleButton />
 
         <p className="text-sm text-center mt-8 text-ink/50">
           Already have an account?{" "}
