@@ -9,36 +9,36 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        cream: "#f1f1f1",
-        ink: "#080808",
+        cream: "#f7f2ea",
+        ink: "#221a13",
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "#080808",
-          foreground: "#f1f1f1",
+          DEFAULT: "#221a13",
+          foreground: "#f7f2ea",
         },
         secondary: {
-          DEFAULT: "#f1f1f1",
-          foreground: "#080808",
+          DEFAULT: "#f7f2ea",
+          foreground: "#221a13",
         },
         muted: {
-          DEFAULT: "#e5e5e5",
-          foreground: "#4a4a4a",
+          DEFAULT: "#ece4d6",
+          foreground: "#5c5346",
         },
         accent: {
-          DEFAULT: "#1a1a1a",
-          foreground: "#f1f1f1",
+          DEFAULT: "#2c241a",
+          foreground: "#f7f2ea",
         },
         destructive: {
-          DEFAULT: "#c0392b",
-          foreground: "#f1f1f1",
+          DEFAULT: "#b23a2c",
+          foreground: "#f7f2ea",
         },
         card: {
           DEFAULT: "#ffffff",
-          foreground: "#080808",
+          foreground: "#221a13",
         },
       },
       borderRadius: {
