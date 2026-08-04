@@ -1,7 +1,8 @@
 import { cn, colorToHex } from "@/lib/utils";
+import type { ItemColor } from "@/types";
 
 type Props = {
-  colors: string[] | null | undefined;
+  colors: ItemColor[] | null | undefined;
   size?: "sm" | "md";
   showNames?: boolean;
   className?: string;
@@ -16,14 +17,14 @@ export function ColorSwatches({ colors, size = "md", showNames = true, className
       {colors.map((color, i) => (
         <span
           key={i}
-          title={color}
+          title={color.name}
           className="inline-flex items-center gap-1.5 text-xs text-ink/60"
         >
           <span
             className={`${dotSize} rounded-full border border-ink/15 shrink-0`}
-            style={{ backgroundColor: colorToHex(color) }}
+            style={{ backgroundColor: colorToHex(color.name) }}
           />
-          {showNames && <span>{color}</span>}
+          {showNames && <span>{color.name}</span>}
         </span>
       ))}
     </div>

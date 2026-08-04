@@ -8,10 +8,9 @@ import { motion } from "framer-motion";
 import { Heart, ShoppingCart, Minus, Plus, ChevronRight, Shield, Truck, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { formatPKR } from "@/lib/utils";
+import { formatPKR, colorToHex } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useUIStore } from "@/lib/store";
-import { ColorSwatches } from "@/components/color-swatches";
 import type { Item } from "@/types";
 
 export function ProductDetail({ item }: { item: Item }) {
@@ -22,6 +21,16 @@ export function ProductDetail({ item }: { item: Item }) {
   const [adding, setAdding] = useState(false);
   const router = useRouter();
   const setCartCount = useUIStore((s) => s.setCartCount);
+
+  const colors = item.colors || [];
+  const hasColors = colors.length > 0;
+  const [selectedColor, setSelectedColor] = useState<string>(
+    () => colors.find((c) => c.stock > 0)?.name ?? colors[0]?.name ?? ""
+  );
+
+  const selectedColorObj = colors.find((c) => c.name === selectedColor);
+  const availableStock = hasColors ? (selectedColorObj?.stock ?? 0) : item.stock;
+  const outOfStock = availableStock <= 0;
 
   const price = item.on_sale && item.sale_price ? item.sale_price : item.price;
 
@@ -36,6 +45,7 @@ export function ProductDetail({ item }: { item: Item }) {
   }, [item.id]);
 
   async function addToCart() {
+    if (hasColors && !selectedColor) { alert("Please select a color."); return; }
     setAdding(true);
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -44,13 +54,14 @@ export function ProductDetail({ item }: { item: Item }) {
       setAdding(false);
       return;
     }
+    const color = hasColors ? selectedColor : "";
     const { data: existing } = await supabase
-      .from("cart_items").select("*").eq("user_id", user.id).eq("item_id", item.id).single();
+      .from("cart_items").select("*").eq("user_id", user.id).eq("item_id", item.id).eq("color", color).single();
 
     if (existing) {
       await supabase.from("cart_items").update({ quantity: existing.quantity + qty }).eq("id", existing.id);
     } else {
-      await supabase.from("cart_items").insert({ user_id: user.id, item_id: item.id, quantity: qty });
+      await supabase.from("cart_items").insert({ user_id: user.id, item_id: item.id, color, quantity: qty });
     }
     setAdding(false);
     const { count } = await supabase.from("cart_items").select("id", { count: "exact", head: true }).eq("user_id", user.id);
@@ -134,16 +145,39 @@ export function ProductDetail({ item }: { item: Item }) {
 
           <p className="mt-6 text-ink/70 leading-relaxed">{item.description}</p>
 
-          {item.colors && item.colors.length > 0 && (
+          {hasColors && (
             <div className="mt-5">
-              <p className="text-xs uppercase tracking-wider text-ink/50 mb-2 font-medium">Available Colors</p>
-              <ColorSwatches colors={item.colors} />
+              <p className="text-xs uppercase tracking-wider text-ink/50 mb-2 font-medium">Select Color</p>
+              <div className="flex flex-wrap gap-2">
+                {colors.map((c) => {
+                  const active = selectedColor === c.name;
+                  const disabled = c.stock <= 0;
+                  return (
+                    <button
+                      key={c.name}
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => { setSelectedColor(c.name); setQty(1); }}
+                      className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-all ${
+                        active ? "border-ink ring-1 ring-ink" : disabled
+                          ? "border-ink/10 opacity-45 cursor-not-allowed" : "border-ink/20 hover:border-ink/50"
+                      }`}
+                    >
+                      <span className="h-4 w-4 rounded-full border border-ink/15 shrink-0" style={{ backgroundColor: colorToHex(c.name) }} />
+                      <span>{c.name}</span>
+                      <span className="text-xs text-ink/40">{disabled ? "Out of stock" : `${c.stock} left`}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
 
-          <p className={`mt-4 text-sm font-medium flex items-center gap-2 ${item.stock > 0 ? "text-green-700" : "text-red-600"}`}>
-            <span className={`inline-block h-2 w-2 rounded-full ${item.stock > 0 ? "bg-green-600" : "bg-red-600"}`} />
-            {item.stock > 0 ? `In Stock (${item.stock} available)` : "Out of Stock"}
+          <p className={`mt-4 text-sm font-medium flex items-center gap-2 ${availableStock > 0 ? "text-green-700" : "text-red-600"}`}>
+            <span className={`inline-block h-2 w-2 rounded-full ${availableStock > 0 ? "bg-green-600" : "bg-red-600"}`} />
+            {hasColors
+              ? (availableStock > 0 ? `In Stock (${availableStock} available in ${selectedColor})` : `Out of stock (${selectedColor})`)
+              : (availableStock > 0 ? `In Stock (${availableStock} available)` : "Out of Stock")}
           </p>
 
           <div className="mt-6 flex items-center gap-4">
@@ -152,13 +186,13 @@ export function ProductDetail({ item }: { item: Item }) {
                 <Minus className="h-4 w-4" />
               </button>
               <span className="px-5 font-medium min-w-[2.5rem] text-center">{qty}</span>
-              <button className="p-2.5 hover:bg-ink/5 transition-colors rounded-r-lg" onClick={() => setQty((q) => Math.min(item.stock, q + 1))}>
+              <button className="p-2.5 hover:bg-ink/5 transition-colors rounded-r-lg" onClick={() => setQty((q) => Math.min(Math.max(1, availableStock), q + 1))}>
                 <Plus className="h-4 w-4" />
               </button>
             </div>
 
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex-1">
-              <Button size="lg" className="w-full" disabled={item.stock === 0 || adding} onClick={addToCart}>
+              <Button size="lg" className="w-full" disabled={outOfStock || adding} onClick={addToCart}>
                 <ShoppingCart className="h-4 w-4 mr-2" /> {adding ? "Adding..." : "Add to Cart"}
               </Button>
             </motion.div>
