@@ -64,10 +64,18 @@ export default function AdminItemsPage() {
   }
 
   async function toggleStock(item: Item, delta: number) {
-    const newStock = Math.max(0, item.stock + delta);
-    setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, stock: newStock } : i));
     const supabase = createClient();
-    await supabase.from("items").update({ stock: newStock }).eq("id", item.id);
+    let colors = item.colors || [];
+    let stock: number;
+    if (colors.length > 0) {
+      const updated = colors.map((c, i) => i === 0 ? { ...c, stock: Math.max(0, c.stock + delta) } : c);
+      stock = updated.reduce((s, c) => s + c.stock, 0);
+      colors = updated;
+    } else {
+      stock = Math.max(0, item.stock + delta);
+    }
+    setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, stock, colors } : i));
+    await supabase.from("items").update({ stock, colors }).eq("id", item.id);
   }
 
   const filtered = items.filter((i) => {
