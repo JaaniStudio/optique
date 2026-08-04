@@ -120,49 +120,74 @@ create index idx_orders_status on orders(status);
 create index idx_orders_user on orders(user_id);
 
 -- Auto-adjust item stock when order items are added/removed.
--- Decrements/replenishes a specific color's stock when a color is given.
+-- Decrements/replenishes a specific color's stock (case-insensitive) when a color is given.
 -- Runs as security definer so it bypasses RLS (users have no direct update on items).
 create function public.adjust_stock_on_order_item()
-returns trigger as $$
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  col jsonb;
+  new_colors jsonb := '[]'::jsonb;
+  item_colors jsonb;
+  color_found boolean := false;
+  chosen_color text;
 begin
   if tg_op = 'INSERT' then
-    if new.color is null or new.color = '' then
-      update public.items set stock = greatest(0, stock - new.quantity) where id = new.item_id;
-    else
-      update public.items
-      set stock = greatest(0, stock - new.quantity),
-          colors = (
-            select jsonb_agg(
-              case when (c->>'name') = new.color
-                   then jsonb_build_object('name', c->>'name', 'stock', greatest(0, (c->>'stock')::int - new.quantity))
-                   else c
-              end
-            )
-            from jsonb_array_elements(colors) c
-          )
-      where id = new.item_id;
+    chosen_color := coalesce(btrim(new.color), '');
+    update public.items set stock = greatest(0, stock - new.quantity) where id = new.item_id;
+    if chosen_color <> '' then
+      select colors into item_colors from public.items where id = new.item_id;
+      if item_colors is null then item_colors := '[]'::jsonb; end if;
+      for col in select value from jsonb_array_elements(item_colors)
+      loop
+        if lower(btrim(col->>'name')) = lower(chosen_color) then
+          new_colors := new_colors || jsonb_build_object(
+            'name', col->>'name',
+            'stock', greatest(0, coalesce((col->>'stock')::int, 0) - new.quantity)
+          );
+          color_found := true;
+        else
+          new_colors := new_colors || col;
+        end if;
+      end loop;
+      if color_found then
+        update public.items set colors = new_colors where id = new.item_id;
+      end if;
     end if;
-  elsif tg_op = 'DELETE' then
-    if old.color is null or old.color = '' then
-      update public.items set stock = stock + old.quantity where id = old.item_id;
-    else
-      update public.items
-      set stock = stock + old.quantity,
-          colors = (
-            select jsonb_agg(
-              case when (c->>'name') = old.color
-                   then jsonb_build_object('name', c->>'name', 'stock', (c->>'stock')::int + old.quantity)
-                   else c
-              end
-            )
-            from jsonb_array_elements(colors) c
-          )
-      where id = old.item_id;
-    end if;
+    return null;
   end if;
+
+  if tg_op = 'DELETE' then
+    chosen_color := coalesce(btrim(old.color), '');
+    update public.items set stock = stock + old.quantity where id = old.item_id;
+    if chosen_color <> '' then
+      select colors into item_colors from public.items where id = old.item_id;
+      if item_colors is null then item_colors := '[]'::jsonb; end if;
+      for col in select value from jsonb_array_elements(item_colors)
+      loop
+        if lower(btrim(col->>'name')) = lower(chosen_color) then
+          new_colors := new_colors || jsonb_build_object(
+            'name', col->>'name',
+            'stock', coalesce((col->>'stock')::int, 0) + old.quantity
+          );
+          color_found := true;
+        else
+          new_colors := new_colors || col;
+        end if;
+      end loop;
+      if color_found then
+        update public.items set colors = new_colors where id = old.item_id;
+      end if;
+    end if;
+    return null;
+  end if;
+
   return null;
 end;
-$$ language plpgsql security definer set search_path = public;
+$$;
 
 create trigger on_order_item_insert
   after insert on public.order_items
