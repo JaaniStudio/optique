@@ -35,7 +35,6 @@ export function Footer() {
               src="/logo.png"
               alt="Chashmish"
               className="h-28 w-auto invert -mt-6"
-              priority
             />
           </Link>
           <p className="text-cream/60 text-sm leading-relaxed -mt-3">

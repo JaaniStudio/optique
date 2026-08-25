@@ -124,10 +124,7 @@ export function Navbar() {
           <img
             src="/logo.png"
             alt="Chashmish"
-            // width={64}
-            // height={64}
             className="h-24 w-auto -mt-2.5"
-            priority
           />
         </Link>
 
