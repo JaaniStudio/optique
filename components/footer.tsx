@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -29,7 +30,13 @@ export function Footer() {
     <footer className="bg-ink text-cream">
       <div className="mx-auto max-w-7xl px-4 md:px-8 py-14 grid grid-cols-1 md:grid-cols-4 gap-10">
         <div>
-          <h3 className="text-xl font-display font-bold mb-3">CHASHMISH</h3>
+          <Image
+            src="/logo.png"
+            alt="Chashmish"
+            width={120}
+            height={40}
+            className="h-8 w-auto invert mb-3"
+          />
           <p className="text-cream/60 text-sm leading-relaxed">
             Premium eyewear from Karachi — sunglasses, eyeglasses & more, crafted for everyday style.
           </p>
