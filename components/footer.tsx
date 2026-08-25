@@ -30,47 +30,94 @@ export function Footer() {
     <footer className="bg-ink text-cream">
       <div className="mx-auto max-w-7xl px-4 md:px-8 py-14 grid grid-cols-1 md:grid-cols-4 gap-10">
         <div>
-          <Image
-            src="/logo.png"
-            alt="Chashmish"
-            width={120}
-            height={40}
-            className="h-8 w-auto invert mb-3"
-          />
-          <p className="text-cream/60 text-sm leading-relaxed">
-            Premium eyewear from Karachi — sunglasses, eyeglasses & more, crafted for everyday style.
+          <Link href="/" className="h-16">
+            <img
+              src="/logo.png"
+              alt="Chashmish"
+              className="h-28 w-auto invert -mt-6"
+              priority
+            />
+          </Link>
+          <p className="text-cream/60 text-sm leading-relaxed -mt-3">
+            Premium eyewear from Karachi — sunglasses, eyeglasses & more,
+            crafted for everyday style.
           </p>
         </div>
 
         <div>
           <h4 className="font-semibold mb-3 text-sm tracking-wide">SHOP</h4>
           <ul className="space-y-2 text-sm text-cream/60">
-            <li><Link href="/products" className="hover:text-cream">All Products</Link></li>
-            <li><Link href="/products/sunglasses" className="hover:text-cream">Sunglasses</Link></li>
-            <li><Link href="/products/eyeglasses" className="hover:text-cream">Eyeglasses</Link></li>
+            <li>
+              <Link href="/products" className="hover:text-cream">
+                All Products
+              </Link>
+            </li>
+            <li>
+              <Link href="/products/sunglasses" className="hover:text-cream">
+                Sunglasses
+              </Link>
+            </li>
+            <li>
+              <Link href="/products/eyeglasses" className="hover:text-cream">
+                Eyeglasses
+              </Link>
+            </li>
           </ul>
         </div>
 
         <div>
           <h4 className="font-semibold mb-3 text-sm tracking-wide">COMPANY</h4>
           <ul className="space-y-2 text-sm text-cream/60">
-            <li><Link href="/about" className="hover:text-cream">About Us</Link></li>
-            <li><Link href="/contact" className="hover:text-cream">Contact</Link></li>
-            <li><Link href="/terms" className="hover:text-cream">Terms &amp; Conditions</Link></li>
-            <li><Link href="/privacy" className="hover:text-cream">Privacy Policy</Link></li>
+            <li>
+              <Link href="/about" className="hover:text-cream">
+                About Us
+              </Link>
+            </li>
+            <li>
+              <Link href="/contact" className="hover:text-cream">
+                Contact
+              </Link>
+            </li>
+            <li>
+              <Link href="/terms" className="hover:text-cream">
+                Terms &amp; Conditions
+              </Link>
+            </li>
+            <li>
+              <Link href="/privacy" className="hover:text-cream">
+                Privacy Policy
+              </Link>
+            </li>
           </ul>
         </div>
 
         <div>
-          <h4 className="font-semibold mb-3 text-sm tracking-wide">FOLLOW US</h4>
+          <h4 className="font-semibold mb-3 text-sm tracking-wide">
+            FOLLOW US
+          </h4>
           <div className="flex gap-4">
-            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+            <a
+              href="https://instagram.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram"
+            >
               <Instagram className="h-5 w-5 hover:opacity-70" />
             </a>
-            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+            <a
+              href="https://facebook.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Facebook"
+            >
               <Facebook className="h-5 w-5 hover:opacity-70" />
             </a>
-            <a href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "923249276352"}`} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+            <a
+              href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "923249276352"}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="WhatsApp"
+            >
               <MessageCircle className="h-5 w-5 hover:opacity-70" />
             </a>
           </div>
