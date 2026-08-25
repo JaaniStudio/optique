@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { Search, ShoppingCart, Heart, User, Menu, X, LayoutDashboard, LogOut, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -119,8 +120,15 @@ export function Navbar() {
     <header className="sticky top-0 z-40 w-full border-b border-ink/10 bg-cream/95 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-8">
         {/* Logo */}
-        <Link href="/" className="text-xl font-display font-bold tracking-tight text-ink shrink-0">
-          CHASHMISH
+        <Link href="/" className="shrink-0 overflow-hidden h-16">
+          <img
+            src="/logo.png"
+            alt="Chashmish"
+            // width={64}
+            // height={64}
+            className="h-24 w-auto -mt-2.5"
+            priority
+          />
         </Link>
 
         {/* Desktop nav + search */}
