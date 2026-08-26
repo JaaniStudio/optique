@@ -77,6 +77,13 @@ create table cart_items (
   item_id uuid references items(id) on delete cascade,
   color text not null default '',
   quantity int not null default 1,
+  lens_type text not null default 'no_eyesight',
+  prescription_method text,
+  right_eye numeric(5,2),
+  left_eye numeric(5,2),
+  eyesight_type text,
+  selected_lens_option_id uuid references lens_options(id) on delete set null,
+  prescription_image_url text,
   created_at timestamptz default now(),
   unique (user_id, item_id, color)
 );
@@ -115,7 +122,15 @@ create table order_items (
   item_name text not null,       -- snapshot at time of order
   item_price numeric(10,2) not null,
   quantity int not null,
-  color text not null default ''  -- color chosen by the customer
+  color text not null default '',  -- color chosen by the customer
+  lens_type text not null default 'no_eyesight',
+  prescription_method text,
+  right_eye numeric(5,2),
+  left_eye numeric(5,2),
+  eyesight_type text,
+  selected_lens_option_name text,
+  selected_lens_option_price numeric(10,2) default 0,
+  prescription_image_url text
 );
 
 create index idx_orders_status on orders(status);
@@ -233,7 +248,25 @@ create table site_settings (
 insert into site_settings (id) values (1);
 
 -- ------------------------------------------------------------
--- 8. NOTIFICATIONS  (navbar bell; admins + user order updates)
+-- 8. LENS OPTIONS  (admin-managed lens upgrade cards)
+-- ------------------------------------------------------------
+create table lens_options (
+  id uuid primary key default uuid_generate_v4(),
+  title text not null,
+  price numeric(10,2) not null default 0,
+  image_url text not null,
+  sort_order int not null default 0,
+  created_at timestamptz default now()
+);
+
+-- Seed default lens options
+insert into lens_options (title, price, image_url, sort_order) values
+  ('Standard Lenses', 0, '/1.jpeg', 1),
+  ('Anti-Glare Lenses', 500, '/2.jpeg', 2),
+  ('Blue Light Blocking', 1000, '/3.jpeg', 3);
+
+-- ------------------------------------------------------------
+-- 9. NOTIFICATIONS  (navbar bell; admins + user order updates)
 -- ------------------------------------------------------------
 create table notifications (
   id uuid primary key default gen_random_uuid(),
@@ -303,11 +336,13 @@ alter table order_items enable row level security;
 alter table reviews enable row level security;
 alter table notifications enable row level security;
 alter table site_settings enable row level security;
+alter table lens_options enable row level security;
 
 -- Public read for storefront
 create policy "categories are public" on categories for select using (true);
 create policy "active items are public" on items for select using (is_active = true);
 create policy "site settings are public" on site_settings for select using (true);
+create policy "lens options are public" on lens_options for select using (true);
 
 -- Profiles: user can read/update/insert own row
 create policy "user reads own profile" on profiles for select using (auth.uid() = id);
@@ -378,6 +413,7 @@ create policy "admin full access profiles" on profiles for all using (public.is_
 create policy "admin full access orders" on orders for all using (public.is_admin());
 create policy "admin full access order_items" on order_items for all using (public.is_admin());
 create policy "admin full access settings" on site_settings for all using (public.is_admin());
+create policy "admin full access lens_options" on lens_options for all using (public.is_admin());
 
 -- ------------------------------------------------------------
 -- REALTIME (for live admin dashboard)
@@ -387,6 +423,7 @@ alter publication supabase_realtime add table items;
 alter publication supabase_realtime add table profiles;
 alter publication supabase_realtime add table site_settings;
 alter publication supabase_realtime add table notifications;
+alter publication supabase_realtime add table lens_options;
 
 -- ------------------------------------------------------------
 -- SEED CATEGORIES (creates one storage bucket name per category —

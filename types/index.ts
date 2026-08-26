@@ -92,3 +92,22 @@ export type AppNotification = {
   is_read: boolean;
   created_at: string;
 };
+
+export type LensOption = {
+  id: string;
+  title: string;
+  price: number;
+  image_url: string;
+  sort_order: number;
+  created_at: string;
+};
+
+export type LensSelection = {
+  lens_type: "no_eyesight" | "eyesight";
+  prescription_method?: "manual" | "upload";
+  right_eye?: number;
+  left_eye?: number;
+  eyesight_type?: string;
+  selected_lens_option_id?: string;
+  prescription_image_url?: string;
+};

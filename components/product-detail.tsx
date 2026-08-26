@@ -12,8 +12,9 @@ import { formatPKR, colorToHex } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useUIStore } from "@/lib/store";
 import { toast } from "@/components/ui/toast";
-import type { Item } from "@/types";
+import type { Item, LensSelection } from "@/types";
 import { ProductReviews } from "@/components/product-reviews";
+import { LensSelectionDialog } from "@/components/lens-selection-dialog";
 
 export function ProductDetail({ item }: { item: Item }) {
   const images = item.images?.length ? item.images : [{ url: "/placeholder-glasses.svg", path: "" }];
@@ -21,6 +22,8 @@ export function ProductDetail({ item }: { item: Item }) {
   const [qty, setQty] = useState(1);
   const [isFav, setIsFav] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [lensDialogOpen, setLensDialogOpen] = useState(false);
+  const [pendingLensSelection, setPendingLensSelection] = useState<LensSelection | null>(null);
   const router = useRouter();
   const setCartCount = useUIStore((s) => s.setCartCount);
 
@@ -48,22 +51,40 @@ export function ProductDetail({ item }: { item: Item }) {
 
   async function addToCart() {
     if (hasColors && !selectedColor) { alert("Please select a color."); return; }
-    setAdding(true);
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       router.push("/login");
-      setAdding(false);
       return;
     }
+    setLensDialogOpen(true);
+  }
+
+  async function confirmAddToCart(selection: LensSelection) {
+    setLensDialogOpen(false);
+    setAdding(true);
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { router.push("/login"); setAdding(false); return; }
+
     const color = hasColors ? selectedColor : "";
     const { data: existing } = await supabase
       .from("cart_items").select("*").eq("user_id", user.id).eq("item_id", item.id).eq("color", color).single();
 
+    const lensData = {
+      lens_type: selection.lens_type,
+      prescription_method: selection.prescription_method || null,
+      right_eye: selection.right_eye ?? null,
+      left_eye: selection.left_eye ?? null,
+      eyesight_type: selection.eyesight_type || null,
+      selected_lens_option_id: selection.selected_lens_option_id || null,
+      prescription_image_url: selection.prescription_image_url || null,
+    };
+
     if (existing) {
-      await supabase.from("cart_items").update({ quantity: existing.quantity + qty }).eq("id", existing.id);
+      await supabase.from("cart_items").update({ quantity: existing.quantity + qty, ...lensData }).eq("id", existing.id);
     } else {
-      await supabase.from("cart_items").insert({ user_id: user.id, item_id: item.id, color, quantity: qty });
+      await supabase.from("cart_items").insert({ user_id: user.id, item_id: item.id, color, quantity: qty, ...lensData });
     }
     setAdding(false);
     const { count } = await supabase.from("cart_items").select("id", { count: "exact", head: true }).eq("user_id", user.id);
@@ -237,6 +258,12 @@ export function ProductDetail({ item }: { item: Item }) {
       </div>
 
       <ProductReviews itemId={item.id} />
+
+      <LensSelectionDialog
+        open={lensDialogOpen}
+        onClose={() => setLensDialogOpen(false)}
+        onConfirm={confirmAddToCart}
+      />
     </div>
   );
 }

@@ -17,10 +17,18 @@ type CartRow = {
   id: string;
   quantity: number;
   color: string;
+  lens_type: string;
+  prescription_method: string | null;
+  right_eye: number | null;
+  left_eye: number | null;
+  eyesight_type: string | null;
+  selected_lens_option_id: string | null;
+  prescription_image_url: string | null;
   item: {
     id: string; name: string; price: number; on_sale: boolean;
     sale_price: number | null; thumbnail_url: string | null; images: any[];
   };
+  lens_option?: { title: string; price: number } | null;
 };
 
 export default function CartPage() {
@@ -40,7 +48,7 @@ export default function CartPage() {
 
     const { data } = await supabase
       .from("cart_items")
-      .select("id, quantity, color, item:items(id, name, price, on_sale, sale_price, thumbnail_url, images)")
+      .select("id, quantity, color, lens_type, prescription_method, right_eye, left_eye, eyesight_type, selected_lens_option_id, prescription_image_url, item:items(id, name, price, on_sale, sale_price, thumbnail_url, images), lens_option:lens_options(title, price)")
       .eq("user_id", user.id);
 
     setRows((data as any) || []);
@@ -69,7 +77,8 @@ export default function CartPage() {
 
   const total = rows.reduce((sum, r) => {
     const price = r.item.on_sale && r.item.sale_price ? r.item.sale_price : r.item.price;
-    return sum + price * r.quantity;
+    const lensPrice = r.lens_option?.price || 0;
+    return sum + (price + lensPrice) * r.quantity;
   }, 0);
 
   async function placeOrder() {
@@ -105,15 +114,42 @@ export default function CartPage() {
       item_price: r.item.on_sale && r.item.sale_price ? r.item.sale_price : r.item.price,
       quantity: r.quantity,
       color: r.color || "",
+      lens_type: r.lens_type || "no_eyesight",
+      prescription_method: r.prescription_method || null,
+      right_eye: r.right_eye ?? null,
+      left_eye: r.left_eye ?? null,
+      eyesight_type: r.eyesight_type || null,
+      selected_lens_option_name: r.lens_option?.title || null,
+      selected_lens_option_price: r.lens_option?.price || 0,
+      prescription_image_url: r.prescription_image_url || null,
     }));
     await supabase.from("order_items").insert(orderItems);
     await supabase.from("cart_items").delete().eq("user_id", user.id);
     setCartCount(0);
 
     const waNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
-    const summary = rows.map((r) => `${r.quantity}x ${r.item.name}${r.color ? ` (${r.color})` : ""}`).join(", ");
+    const summary = rows.map((r) => {
+      let line = `${r.quantity}x ${r.item.name}`;
+      if (r.color) line += ` (${r.color})`;
+      if (r.lens_type === "eyesight") {
+        line += ` [Eyesight: ${r.eyesight_type || "Prescription"}`;
+        if (r.right_eye != null || r.left_eye != null) {
+          line += `, R:${r.right_eye ?? "-"} L:${r.left_eye ?? "-"}`;
+        }
+        if (r.lens_option) line += `, Lens: ${r.lens_option.title}`;
+        line += "]";
+      }
+      return line;
+    }).join("\n");
+    const hasEyesight = rows.some((r) => r.lens_type === "eyesight");
+    const hasUploadRx = rows.some((r) => r.prescription_method === "upload");
+    const prescriptionNote = hasUploadRx
+      ? "\n\nNote: I will send my prescription image in this chat."
+      : hasEyesight
+        ? ""
+        : "";
     const message = encodeURIComponent(
-      `Hi! I placed order #${order.id.slice(0, 8)} for: ${summary}. Total: ${formatPKR(total)}. I'll send my payment screenshot here.`
+      `Hi! I placed order #${order.id.slice(0, 8)}:\n\n${summary}\n\nTotal: ${formatPKR(total)}${prescriptionNote}\n\nI'll send my payment screenshot here.`
     );
     window.location.href = `https://wa.me/${waNumber}?text=${message}`;
   }
@@ -170,6 +206,19 @@ export default function CartPage() {
                   <p className="font-medium truncate">{r.item.name}</p>
                   {r.color && (
                     <p className="text-xs text-ink/50 mt-0.5">Color: <span className="font-medium text-ink/70">{r.color}</span></p>
+                  )}
+                  {r.lens_type === "eyesight" && (
+                    <div className="text-xs text-ink/50 mt-0.5 space-y-0.5">
+                      <p>Eyesight: {r.eyesight_type || "Prescription"}</p>
+                      {r.prescription_method === "manual" && (r.right_eye != null || r.left_eye != null) && (
+                        <p>R: {r.right_eye ?? "-"} / L: {r.left_eye ?? "-"}</p>
+                      )}
+                      {r.prescription_method === "upload" && <p>Prescription image attached</p>}
+                      {r.lens_option && <p>Lens: {r.lens_option.title}{r.lens_option.price > 0 ? ` (+${formatPKR(r.lens_option.price)})` : ""}</p>}
+                    </div>
+                  )}
+                  {r.lens_type === "no_eyesight" && (
+                    <p className="text-xs text-ink/50 mt-0.5">No eyesight lenses</p>
                   )}
                   <p className="text-sm text-ink/60 mt-0.5">{formatPKR(price)} each</p>
                 </div>
