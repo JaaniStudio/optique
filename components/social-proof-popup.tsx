@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatPKR } from "@/lib/utils";
@@ -98,43 +97,34 @@ export function SocialProofPopup() {
   const href = `/products/${message.item.category?.slug ?? "all"}/${message.item.id}`;
 
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={message.id}
-        initial={{ opacity: 0, y: 16, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: -12, scale: 0.97 }}
-        transition={{ duration: 0.2, ease: "easeOut" }}
-        className="fixed bottom-20 right-4 z-[90] w-[calc(100%-2rem)] max-w-sm"
-      >
-        <div className="relative rounded-xl border border-ink/10 bg-white p-3 pr-9 shadow-xl">
-          <button
-            type="button"
-            onClick={() => setDismissed(true)}
-            aria-label="Dismiss"
-            className="absolute right-2 top-2 rounded-full bg-ink/5 p-1.5 text-ink/40 hover:bg-ink/10 hover:text-ink transition-colors"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-          <Link href={href} className="flex items-center gap-3">
-            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-cream">
-              <Image src={image} alt={message.item.name} fill className="object-cover" />
-            </div>
-            <div className="min-w-0">
-              <p className="flex items-center gap-1.5 text-xs text-ink/50">
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-500" />
-                {message.customer} from {message.location}
-              </p>
-              <p className="truncate text-sm font-medium text-ink">
-                just bought {message.item.name}
-              </p>
-              <p className="text-xs text-ink/50">
-                {formatPKR(price)} &middot; {message.minutesAgo} min ago
-              </p>
-            </div>
-          </Link>
-        </div>
-      </motion.div>
-    </AnimatePresence>
+    <div className="fixed bottom-20 right-4 z-[90] w-[calc(100%-2rem)] max-w-sm">
+      <div className="relative rounded-xl border border-ink/10 bg-white p-3 pr-9 shadow-xl">
+        <button
+          type="button"
+          onClick={() => setDismissed(true)}
+          aria-label="Dismiss"
+          className="absolute right-2 top-2 z-10 rounded-full bg-ink/5 p-1.5 text-ink/40 hover:bg-ink/10 hover:text-ink transition-colors"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+        <Link href={href} className="flex items-center gap-3">
+          <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-cream">
+            <Image src={image} alt={message.item.name} fill className="object-cover" />
+          </div>
+          <div className="min-w-0">
+            <p className="flex items-center gap-1.5 text-xs text-ink/50">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-500" />
+              {message.customer} from {message.location}
+            </p>
+            <p className="truncate text-sm font-medium text-ink">
+              just bought {message.item.name}
+            </p>
+            <p className="text-xs text-ink/50">
+              {formatPKR(price)} &middot; {message.minutesAgo} min ago
+            </p>
+          </div>
+        </Link>
+      </div>
+    </div>
   );
 }
