@@ -6,6 +6,7 @@ import { Footer } from "@/components/footer";
 import { AnnouncementBanner } from "@/components/announcement-banner";
 import { ToastProvider } from "@/components/ui/toast";
 import { ToastHost } from "@/components/toast-host";
+import { SocialProofPopup } from "@/components/social-proof-popup";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-display" });
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main className="min-h-screen">{children}</main>
           <Footer />
           <ToastHost />
+          <SocialProofPopup />
         </ToastProvider>
       </body>
     </html>
