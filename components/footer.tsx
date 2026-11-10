@@ -4,8 +4,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
-import { Instagram, Facebook, MessageCircle, Heart } from "lucide-react";
+import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import { useRef } from "react";
+import { Instagram, Facebook, MessageCircle, Heart, ArrowUpRight } from "lucide-react";
 
 type FloatingHeart = { id: number; x: number };
 
@@ -13,6 +14,10 @@ export function Footer() {
   const pathname = usePathname();
   const [hearts, setHearts] = useState<FloatingHeart[]>([]);
   const [loving, setLoving] = useState(false);
+  const ref = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end end"] });
+  const wordY = useTransform(scrollYProgress, [0, 1], ["60%", "0%"]);
+  const wordOpacity = useTransform(scrollYProgress, [0, 1], [0, 1]);
   if (pathname.startsWith("/admin")) return null;
 
   function loveBurst() {
@@ -27,7 +32,17 @@ export function Footer() {
   }
 
   return (
-    <footer className="bg-ink text-cream">
+    <footer ref={ref} className="relative overflow-hidden rounded-t-[2.5rem] bg-ink text-cream">
+      <div className="mx-auto max-w-7xl px-4 pt-20 md:px-8">
+        <div className="flex flex-col gap-8 border-b border-cream/10 pb-14 md:flex-row md:items-end md:justify-between">
+          <h3 className="max-w-xl font-display text-4xl font-bold leading-[1.05] md:text-6xl">
+            Frames for the way <span className="italic text-sand">you</span> see.
+          </h3>
+          <Link href="/products" className="btn-pill btn-cream self-start md:self-end">
+            Shop the collection <ArrowUpRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </div>
       <div className="mx-auto max-w-7xl px-4 md:px-8 py-14 grid grid-cols-1 md:grid-cols-4 gap-10">
         <div>
           <Link href="/" className="h-16">
@@ -44,20 +59,20 @@ export function Footer() {
         </div>
 
         <div>
-          <h4 className="font-semibold mb-3 text-sm tracking-wide">SHOP</h4>
+          <h4 className="mb-5 text-[11px] font-semibold uppercase tracking-[0.3em] text-sand">SHOP</h4>
           <ul className="space-y-2 text-sm text-cream/60">
             <li>
-              <Link href="/products" className="hover:text-cream">
+              <Link href="/products" className="link-underline transition-colors hover:text-cream">
                 All Products
               </Link>
             </li>
             <li>
-              <Link href="/products/sunglasses" className="hover:text-cream">
+              <Link href="/products/sunglasses" className="link-underline transition-colors hover:text-cream">
                 Sunglasses
               </Link>
             </li>
             <li>
-              <Link href="/products/eyeglasses" className="hover:text-cream">
+              <Link href="/products/eyeglasses" className="link-underline transition-colors hover:text-cream">
                 Eyeglasses
               </Link>
             </li>
@@ -65,25 +80,25 @@ export function Footer() {
         </div>
 
         <div>
-          <h4 className="font-semibold mb-3 text-sm tracking-wide">COMPANY</h4>
+          <h4 className="mb-5 text-[11px] font-semibold uppercase tracking-[0.3em] text-sand">COMPANY</h4>
           <ul className="space-y-2 text-sm text-cream/60">
             <li>
-              <Link href="/about" className="hover:text-cream">
+              <Link href="/about" className="link-underline transition-colors hover:text-cream">
                 About Us
               </Link>
             </li>
             <li>
-              <Link href="/contact" className="hover:text-cream">
+              <Link href="/contact" className="link-underline transition-colors hover:text-cream">
                 Contact
               </Link>
             </li>
             <li>
-              <Link href="/terms" className="hover:text-cream">
+              <Link href="/terms" className="link-underline transition-colors hover:text-cream">
                 Terms &amp; Conditions
               </Link>
             </li>
             <li>
-              <Link href="/privacy" className="hover:text-cream">
+              <Link href="/privacy" className="link-underline transition-colors hover:text-cream">
                 Privacy Policy
               </Link>
             </li>
@@ -91,17 +106,17 @@ export function Footer() {
         </div>
 
         <div>
-          <h4 className="font-semibold mb-3 text-sm tracking-wide">
+          <h4 className="mb-5 text-[11px] font-semibold uppercase tracking-[0.3em] text-sand">
             FOLLOW US
           </h4>
-          <div className="flex gap-4">
+          <div className="flex gap-3 [&>a]:flex [&>a]:h-11 [&>a]:w-11 [&>a]:items-center [&>a]:justify-center [&>a]:rounded-full [&>a]:border [&>a]:border-cream/15 [&>a]:transition-all [&>a]:duration-500 hover:[&>a]:border-cream [&>a:hover]:bg-cream [&>a:hover]:text-ink [&>a:hover]:-translate-y-1">
             <a
               href="https://instagram.com"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Instagram"
             >
-              <Instagram className="h-5 w-5 hover:opacity-70" />
+              <Instagram className="h-5 w-5" />
             </a>
             <a
               href="https://facebook.com"
@@ -109,7 +124,7 @@ export function Footer() {
               rel="noopener noreferrer"
               aria-label="Facebook"
             >
-              <Facebook className="h-5 w-5 hover:opacity-70" />
+              <Facebook className="h-5 w-5" />
             </a>
             <a
               href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "923249276352"}`}
@@ -117,11 +132,19 @@ export function Footer() {
               rel="noopener noreferrer"
               aria-label="WhatsApp"
             >
-              <MessageCircle className="h-5 w-5 hover:opacity-70" />
+              <MessageCircle className="h-5 w-5" />
             </a>
           </div>
         </div>
       </div>
+
+      <motion.div
+        style={{ y: wordY, opacity: wordOpacity }}
+        aria-hidden
+        className="pointer-events-none select-none whitespace-nowrap text-center font-display text-[19vw] font-bold leading-[0.8] text-cream/[0.06]"
+      >
+        Chashmish
+      </motion.div>
 
       <div className="relative border-t border-cream/10 py-4 flex flex-col items-center gap-2 text-center text-xs text-cream/40">
         <p>&copy; {new Date().getFullYear()} Chashmish. All rights reserved.</p>

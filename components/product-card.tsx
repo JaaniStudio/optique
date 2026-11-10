@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { motion } from "framer-motion";
-import { Heart } from "lucide-react";
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { Heart, ArrowUpRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatPKR } from "@/lib/utils";
 import type { Item } from "@/types";
@@ -50,49 +50,79 @@ export function ProductCard({ item }: { item: Item }) {
     });
   }
 
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
+  const rotateX = useSpring(useTransform(my, [-0.5, 0.5], [8, -8]), { stiffness: 200, damping: 20 });
+  const rotateY = useSpring(useTransform(mx, [-0.5, 0.5], [-8, 8]), { stiffness: 200, damping: 20 });
+  function onMove(e: React.MouseEvent<HTMLDivElement>) {
+    const r = e.currentTarget.getBoundingClientRect();
+    mx.set((e.clientX - r.left) / r.width - 0.5);
+    my.set((e.clientY - r.top) / r.height - 0.5);
+  }
+  function onLeave() {
+    mx.set(0);
+    my.set(0);
+  }
+
   const price = item.on_sale && item.sale_price ? item.sale_price : item.price;
 
   return (
-    <Link href={`/products/${item.category?.slug ?? "all"}/${item.id}`}>
+    <Link href={`/products/${item.category?.slug ?? "all"}/${item.id}`} className="block perspective">
       <motion.div
-        whileHover={{ y: -6 }}
-        transition={{ type: "spring", stiffness: 300, damping: 20 }}
-        className="group relative rounded-xl overflow-hidden border border-ink/10 bg-white shadow-sm hover:border-ink/25 hover:shadow-xl transition-shadow transition-colors"
+        onMouseMove={onMove}
+        onMouseLeave={onLeave}
+        style={{ rotateX, rotateY }}
+        className="group preserve-3d relative"
       >
-        <div className="relative aspect-square bg-cream overflow-hidden">
+        <div className="relative aspect-[4/5] overflow-hidden rounded-[1.5rem] bg-bone shadow-soft transition-shadow duration-700 ease-expo group-hover:shadow-lift">
           <Image
             src={item.thumbnail_url || item.images?.[0]?.url || "/placeholder-glasses.svg"}
             alt={item.name}
             fill
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            sizes="(min-width: 768px) 25vw, 50vw"
+            className="object-cover transition-transform duration-[1.2s] ease-expo group-hover:scale-110"
           />
+          {item.images?.[1]?.url && (
+            <Image
+              src={item.images[1].url}
+              alt=""
+              fill
+              sizes="(min-width: 768px) 25vw, 50vw"
+              className="object-cover opacity-0 transition-opacity duration-700 group-hover:opacity-100"
+            />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-ink/40 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
           {item.on_sale && (
-            <Badge variant="sale" className="absolute top-3 left-3">SALE</Badge>
+            <Badge variant="sale" className="absolute left-3 top-3 rounded-full px-3">SALE</Badge>
           )}
           <motion.button
             whileTap={{ scale: 0.8 }}
             onClick={toggleFavorite}
-            className="absolute top-3 right-3 rounded-full bg-white/90 p-2"
+            aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
+            className="absolute right-3 top-3 rounded-full bg-cream/90 p-2.5 shadow-soft backdrop-blur transition-transform duration-300 hover:scale-110"
+            style={{ transform: "translateZ(40px)" }}
           >
             <Heart className={`h-4 w-4 ${isFav ? "fill-ink text-ink" : "text-ink"}`} />
           </motion.button>
+          <span className="absolute bottom-3 left-3 right-3 flex translate-y-4 items-center justify-between rounded-full bg-cream/95 px-4 py-2.5 text-xs font-semibold text-ink opacity-0 backdrop-blur transition-all duration-500 ease-expo group-hover:translate-y-0 group-hover:opacity-100">
+            View details <ArrowUpRight className="h-4 w-4" />
+          </span>
         </div>
 
-        <div className="p-4">
+        <div className="px-1 pt-4">
           {item.category && (
-            <p className="text-xs uppercase tracking-wide text-ink/50 mb-1">{item.category.name}</p>
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.25em] text-ink/40">{item.category.name}</p>
           )}
-          <h3 className="font-medium text-ink">{item.name}</h3>
-          <div className="mt-2 flex items-center gap-2">
-            <span className="font-semibold">{formatPKR(price)}</span>
-            {item.on_sale && (
-              <span className="text-sm text-ink/40 line-through">{formatPKR(item.price)}</span>
-            )}
+          <div className="flex items-start justify-between gap-3">
+            <h3 className="font-display text-lg font-semibold leading-tight text-ink">{item.name}</h3>
+            <div className="shrink-0 text-right">
+              <span className="block text-sm font-semibold">{formatPKR(price)}</span>
+              {item.on_sale && (
+                <span className="text-xs text-ink/40 line-through">{formatPKR(item.price)}</span>
+              )}
+            </div>
           </div>
-          {item.colors?.length ? <ColorSwatches colors={item.colors} size="sm" showNames={false} className="mt-2" /> : null}
-          <span className="mt-3 inline-block text-xs font-medium underline underline-offset-4 opacity-0 group-hover:opacity-100 transition-opacity">
-            View Details
-          </span>
+          {item.colors?.length ? <ColorSwatches colors={item.colors} size="sm" showNames={false} className="mt-3" /> : null}
         </div>
       </motion.div>
     </Link>

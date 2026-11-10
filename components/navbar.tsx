@@ -19,7 +19,7 @@ const menuBoxClass =
   "absolute top-full pt-2 z-50";
 
 const menuPanelClass =
-  "min-w-[190px] overflow-hidden rounded-xl border border-ink/10 bg-white p-1.5 text-ink shadow-xl";
+  "min-w-[210px] overflow-hidden rounded-2xl border border-ink/10 bg-cream/95 p-1.5 text-ink shadow-lift backdrop-blur-xl animate-in fade-in-0 slide-in-from-top-2 duration-300";
 
 const menuItemClass =
   "block w-full rounded-lg px-3 py-2 text-left text-sm text-ink transition-colors hover:bg-ink hover:text-cream";
@@ -84,6 +84,21 @@ export function Navbar() {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const { cartCount, favoritesCount } = useUIStore();
   const router = useRouter();
+  const [scrolled, setScrolled] = useState(false);
+  const [hidden, setHidden] = useState(false);
+
+  useEffect(() => {
+    let last = window.scrollY;
+    function onScroll() {
+      const y = window.scrollY;
+      setScrolled(y > 24);
+      setHidden(y > 400 && y > last && !mobileOpen);
+      last = y;
+    }
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [mobileOpen]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -117,14 +132,24 @@ export function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-ink/10 bg-cream/95 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-8">
+    <header
+      className={`sticky top-0 z-40 w-full transition-all duration-700 ease-expo ${
+        hidden ? "-translate-y-full" : "translate-y-0"
+      } ${scrolled ? "px-2 md:px-4" : "px-0"}`}
+    >
+      <div
+        className={`mx-auto flex items-center justify-between px-4 transition-all duration-700 ease-expo md:px-8 ${
+          scrolled
+            ? "mt-2 max-w-6xl rounded-full border border-ink/10 bg-cream/75 py-1.5 shadow-soft backdrop-blur-xl"
+            : "max-w-7xl border-b border-ink/10 bg-cream/95 py-3 backdrop-blur"
+        }`}
+      >
         {/* Logo */}
-        <Link href="/" className="shrink-0 overflow-hidden h-16">
+        <Link href="/" className={`shrink-0 overflow-hidden transition-all duration-700 ease-expo ${scrolled ? "h-12" : "h-16"}`}>
           <img
             src="/logo.png"
             alt="Chashmish"
-            className="h-24 w-auto -mt-2.5"
+            className={`w-auto transition-all duration-700 ease-expo ${scrolled ? "h-[4.5rem] -mt-3" : "h-24 -mt-2.5"}`}
           />
         </Link>
 
@@ -169,7 +194,7 @@ export function Navbar() {
             <input
               name="q"
               placeholder="Search in products..."
-              className="w-full rounded-md bg-ink/5 py-1.5 pl-9 pr-3 text-sm outline-none placeholder:text-ink/40 focus:ring-1 focus:ring-ink/20 transition-all"
+              className="w-full rounded-full bg-ink/5 py-2 pl-9 pr-4 text-sm outline-none placeholder:text-ink/40 focus:ring-1 focus:ring-ink/20 transition-all"
             />
           </form>
         </div>
@@ -233,14 +258,14 @@ export function Navbar() {
       </div>
 
       {/* Mobile search bar */}
-      <div className="md:hidden border-t border-ink/10 px-4 pb-3 pt-2">
+      <div className={`md:hidden px-4 pb-3 pt-2 transition-all ${scrolled ? "hidden" : "border-t border-ink/10 bg-cream/95"}`}>
         <form action="/products">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ink/40" />
             <input
               name="q"
               placeholder="Search in products..."
-              className="w-full rounded-md bg-ink/5 py-2 pl-10 pr-4 text-sm outline-none placeholder:text-ink/40 focus:ring-1 focus:ring-ink/20 transition-all"
+              className="w-full rounded-full bg-ink/5 py-2 pl-10 pr-4 text-sm outline-none placeholder:text-ink/40 focus:ring-1 focus:ring-ink/20 transition-all"
             />
           </div>
         </form>
@@ -253,7 +278,7 @@ export function Navbar() {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="md:hidden flex flex-col gap-4 border-t border-ink/10 px-4 py-4 overflow-hidden"
+            className="md:hidden mx-2 mt-2 flex flex-col gap-4 overflow-hidden rounded-3xl border border-ink/10 bg-cream/95 px-6 py-6 font-display text-xl shadow-lift backdrop-blur-xl"
           >
             <Link href="/" onClick={() => setMobileOpen(false)}>Home</Link>
             <Link href="/products" onClick={() => setMobileOpen(false)}>Products</Link>
