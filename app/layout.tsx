@@ -6,6 +6,8 @@ import { Footer } from "@/components/footer";
 import { AnnouncementBanner } from "@/components/announcement-banner";
 import { ToastProvider } from "@/components/ui/toast";
 import { ToastHost } from "@/components/toast-host";
+import { ScrollProgress } from "@/components/scroll-progress";
+import { Cursor } from "@/components/cursor";
 import { SocialProofPopup } from "@/components/social-proof-popup";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -21,6 +23,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className={`${inter.variable} ${playfair.variable} font-sans bg-cream text-ink`}>
         <ToastProvider>
+          <ScrollProgress />
+          <Cursor />
           <AnnouncementBanner />
           <Navbar />
           <main className="min-h-screen">{children}</main>

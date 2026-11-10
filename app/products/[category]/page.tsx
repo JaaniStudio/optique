@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/page-header";
 import { ProductGrid } from "@/components/product-grid";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
@@ -38,7 +39,7 @@ export default async function CategoryPage({ params }: { params: { category: str
         <span className="text-ink/70">{cat.name}</span>
       </nav>
 
-      <h1 className="text-3xl md:text-4xl font-display font-bold">{cat.name}</h1>
+      <PageHeader eyebrow="Collection" title={cat.name} />
       <ProductGrid
         items={(items as Item[]) || []}
         categories={(categories as Category[]) || []}

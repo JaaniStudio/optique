@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ShoppingBag, DollarSign, Package, Users, Clock, Truck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatPKR } from "@/lib/utils";
+import { motion } from "framer-motion";
 import { BannerEditor } from "@/components/admin/banner-editor";
 
 type Stats = {
@@ -69,28 +70,45 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-display font-bold">Dashboard</h1>
-        <p className="text-sm text-ink/50 mt-1">Overview of your store</p>
+      <div className="relative mb-10 overflow-hidden rounded-[2rem] bg-ink p-8 text-cream md:p-10">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 animate-spin-slow rounded-full border border-dashed border-cream/15" />
+        <div className="pointer-events-none absolute -right-4 -top-4 h-40 w-40 rounded-full border border-cream/10" />
+        <p className="eyebrow mb-4 text-cream/50">Overview</p>
+        <h1 className="font-display text-4xl font-bold tracking-tight md:text-5xl">Dashboard</h1>
+        <p className="mt-2 text-sm text-cream/60">Overview of your store — updates live as orders come in.</p>
+        <span className="mt-6 inline-flex items-center gap-2 rounded-full border border-cream/15 bg-cream/5 px-3 py-1 text-xs text-cream/70">
+          <span className="relative flex h-2 w-2"><span className="absolute inset-0 animate-ping rounded-full bg-green-400/70" /><span className="relative h-2 w-2 rounded-full bg-green-400" /></span>
+          Live
+        </span>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
-        {cardConfigs.map(({ label, value: key, icon: Icon, color }) => {
+      <div className="mb-10 grid grid-cols-2 gap-4 lg:grid-cols-3">
+        {cardConfigs.map(({ label, value: key, icon: Icon }, i) => {
           const val = stats[key as keyof Stats];
           const display = key === "totalSales" ? formatPKR(val as number) : val;
           return (
-            <div key={label} className="rounded-xl border border-ink/10 bg-white p-5 transition-all hover:shadow-md">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${color}`}>
-                <Icon className="h-5 w-5" />
+            <motion.div
+              key={label}
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: i * 0.06, ease: [0.16, 1, 0.3, 1] }}
+              whileHover={{ y: -4 }}
+              className="group relative overflow-hidden rounded-[1.5rem] border border-ink/10 bg-white p-5 shadow-soft transition-shadow duration-500 hover:shadow-lift md:p-6"
+            >
+              <div className="mb-6 flex items-center justify-between">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-ink/5 text-ink transition-all duration-500 ease-expo group-hover:bg-ink group-hover:text-cream">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <span className="font-display text-xs text-ink/30">{String(i + 1).padStart(2, "0")}</span>
               </div>
-              <p className="text-2xl font-bold">{loading ? <span className="text-ink/20">--</span> : display}</p>
-              <p className="text-sm text-ink/50">{label}</p>
-            </div>
+              <p className="font-display text-2xl font-bold md:text-3xl">{loading ? <span className="inline-block h-7 w-16 animate-pulse rounded bg-ink/10 align-middle" /> : display}</p>
+              <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-ink/45">{label}</p>
+            </motion.div>
           );
         })}
       </div>
 
-      <div className="border border-ink/10 rounded-xl bg-white p-6">
+      <div className="rounded-[1.5rem] border border-ink/10 bg-white p-6 shadow-soft md:p-8">
         <BannerEditor />
       </div>
     </div>

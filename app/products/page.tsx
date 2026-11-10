@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/page-header";
 import { ProductGrid } from "@/components/product-grid";
 import { createClient } from "@/lib/supabase/server";
 import type { Item, Category } from "@/types";
@@ -14,7 +15,7 @@ export default async function ProductsPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 md:px-8 py-12">
-      <h1 className="text-3xl font-display font-bold mb-2">All Products</h1>
+      <PageHeader eyebrow="The collection" title="All products" description="Every frame we carry — filter by category, price and colour to find your pair." />
       <ProductGrid
         items={(items as Item[]) || []}
         categories={(categories as Category[]) || []}
