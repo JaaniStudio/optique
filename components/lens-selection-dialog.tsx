@@ -218,7 +218,7 @@ export function LensSelectionDialog({ open, onClose, onConfirm }: Props) {
 
             <div className="space-y-2">
               <Label className="text-xs text-ink/60 block">Choose Lens Package</Label>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {lensOptions.map((opt) => (
                   <button
                     key={opt.id}
@@ -230,7 +230,7 @@ export function LensSelectionDialog({ open, onClose, onConfirm }: Props) {
                     }`}
                   >
                     <div className="relative aspect-square rounded-lg overflow-hidden mb-2 bg-cream">
-                      <Image src={opt.image_url} alt={opt.title} fill className="object-cover" />
+                      <Image src={opt.image_url || "/placeholder-glasses.svg"} alt={opt.title} fill className="object-cover" />
                     </div>
                     <p className="text-xs font-medium leading-tight">{opt.title}</p>
                     <p className="text-xs text-ink/50 mt-0.5">
