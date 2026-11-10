@@ -97,7 +97,8 @@ export type LensOption = {
   id: string;
   title: string;
   price: number;
-  image_url: string;
+  image_url: string | null;
+  image_path: string | null;
   sort_order: number;
   created_at: string;
 };
